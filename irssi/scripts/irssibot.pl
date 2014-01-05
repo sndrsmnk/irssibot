@@ -113,16 +113,16 @@ sub initialize {
 
 
 sub on_public {
-	my ($server, $msg, $nick, $address, $target) = @_;
+    my ($server, $msg, $nick, $address, $target) = @_;
 
     # Fiddle with values so:
     #  msgtype | target   | nick    |
     # ---------+----------+---------+
     #  public  | #channel | IRCNick |
     #  private | IRCNick  | IRCNick |
-	$target = $nick if ( ! $target );
-	$nick = $server->{'nick'} if ($nick =~ /^#/);
-	$target = lc($target);
+    $target = $nick if ( ! $target );
+    $nick = $server->{'nick'} if ($nick =~ /^#/);
+    $target = lc($target);
 
     # Match on bot commands
     return if ($msg !~ m#^$$state{bot_trigger}#);
