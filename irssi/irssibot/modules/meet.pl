@@ -11,7 +11,7 @@ my $args = $$irc_event{args};
 
 return reply("you lack permission.") if (not perms("admin", "meet", "merge"));
 
-my $meet_nick = $args;
+my $meet_nick = $args; $meet_nick =~ s/\s+$//; $meet_nick =~ s/^\s+//;
 return reply("function !meet requires a nick as argument.") if ($meet_nick eq "");
 
 foreach my $channel (Irssi::channels()) {
@@ -19,13 +19,13 @@ foreach my $channel (Irssi::channels()) {
     foreach my $nick ($channel->nicks()) {
         next if ($nick->{nick} eq $channel->{ownnick}->{nick});
         if ($nick->{nick} =~ m#^$meet_nick$#i) {
-            my $tmp_user_info = $$state{dbh}->selectrow_hashref("select u.* from ib_users u, ib_hostmasks h WHERE u.id = h.users_id AND h.hostmask = ?", undef, $nick->{host});
+            my $tmp_user_info = $$state{dbh}->selectrow_hashref("SELECT u.* FROM ib_users u, ib_hostmasks h WHERE u.id = h.users_id AND h.hostmask = ?", undef, $nick->{host});
             if (exists $$tmp_user_info{ircnick}) {
                 say("Hostmask '$nick->{host}' for nick '$nick->{nick}' matches registered user '$$tmp_user_info{ircnick}'.");
                 return;
             }
 
-            $tmp_user_info = $$state{dbh}->selectrow_hashref("select * from ib_users where ircnick = ?", undef, $nick->{nick});
+            $tmp_user_info = $$state{dbh}->selectrow_hashref("SELECT * FROM ib_users WHERE ircnick = ?", undef, $nick->{nick});
             if (exists $$tmp_user_info{ircnick}) {
                 reply("Nickname '".$nick->{nick}."' is already a registered user.");
                 return;
