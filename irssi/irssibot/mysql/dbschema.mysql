@@ -1,0 +1,47 @@
+DROP TABLE IF EXISTS `ib_perms`;
+DROP TABLE IF EXISTS `ib_hostmasks`;
+DROP TABLE IF EXISTS `ib_users`;
+
+CREATE TABLE `ib_users` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+
+    `ircnick` varchar(32) NOT NULL,
+    `email` varchar(128),
+    `dob` DATE,
+-- more info
+
+    `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `insert_time` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ib_users_ircnick_idx` (`ircnick`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ib_hostmasks` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+
+    `users_id` bigint(20) unsigned NOT NULL,
+    `hostmask` varchar(255) NOT NULL,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ib_hostmasks_hostmask_idx` (`hostmask`),
+    FOREIGN KEY `ib_hostmasks_users_id_idx` (`users_id`) REFERENCES `ib_users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ib_perms` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+
+    `users_id` bigint(20) unsigned NOT NULL,
+    `permission` varchar(50) NOT NULL,
+
+    PRIMARY KEY (`id`),
+    FOREIGN KEY `ib_perms_users_id_idx` (`users_id`) REFERENCES `ib_users` (`id`),
+    UNIQUE KEY `ib_perms_users_id__permission_idx` (`users_id`, `permission`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+INSERT INTO ib_users (ircnick, insert_time) VALUES ('Fluor', NOW());
+INSERT INTO ib_hostmasks (users_id, hostmask) VALUES (1, 'Fluor!ssmeenk@dot.freshdot.net');
+INSERT INTO ib_hostmasks (users_id, hostmask) VALUES (1, 'Fluor_!ssmeenk@dot.freshdot.net');
+INSERT INTO ib_hostmasks (users_id, hostmask) VALUES (1, 'Phluor!ssmeenk@pound.freshdot.net');
+INSERT INTO ib_perms (users_id, permission) VALUES(1, 'user');
+INSERT INTO ib_perms (users_id, permission) VALUES(1, 'admin');
