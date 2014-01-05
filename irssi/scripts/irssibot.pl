@@ -16,7 +16,7 @@ $VERSION = "0.1alpha";
     authors     => 'Sander Smeenk',
     contact     => 'irssi@freshdot.net',
     name        => 'irssibot',
-	description => 'IRC bot implementation based on irssi',
+    description => 'IRC bot implementation based on irssi',
     license     => 'GNU GPLv2 or later',
     url         => 'http://www.freshdot.net/',
 );
@@ -83,30 +83,27 @@ Irssi::signal_add_last("message own_private", "on_public");
 ####
 ####
 
-# (Re)loads, initializes, all modules found in $$state
+
 sub initialize {
     msg("Initializing.");
 
-    # Connect to DB
     $$state{dbh} = DBI->connect("dbi:mysql:mysql_read_default_file=".$ENV{HOME}."/.my.cnf:mysql_auto_reconnect=1");
     if (!$$state{dbh}) {
-        msg("Can't connect to database?");
+        msg("Fatal: can't connect to database!");
         msg("\$DBI::errstr: $DBI::errstr");
         msg("\$!: $!");
-        delete $$state{dbh};
+        return;
     } else {
         msg("Database connection OK");
     }
 
-    # Load all modules
     if (-d $$state{bot_modulepath}) {
         opendir(DIR, $$state{bot_modulepath});
         my @modules = grep { /\.pl$/ } readdir(DIR);
         closedir(DIR);
         foreach my $module (@modules) { load_module($module); }
-        my $modules_text = join ", ", keys %{$$state{modules}};
         msg("");
-        msg("Modules loaded: $modules_text");
+        msg("Modules loaded: " . join(', ', keys %{$$state{modules}}));
     } else {
         msg("No module directory '$$state{bot_modulepath}' found!");
     }
