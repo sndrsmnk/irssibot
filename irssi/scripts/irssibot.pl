@@ -94,6 +94,7 @@ sub initialize {
         msg("\$!: $!");
         return;
     } else {
+        $$state{dbh}->{RaiseError} = 0; # :>
         msg("Database connection OK");
     }
 
@@ -128,6 +129,7 @@ sub on_public {
     return if ($msg !~ m#^$$state{bot_trigger}#);
     return if ($msg !~ $$state{bot_commandre});
     my $command = $1; my $args = $2 || "";
+    $args =~ s/^\s+//g; $args =~ s/\s+$//g;
 
     # Fetch user information from DB
     $$state{user_info} = {};
