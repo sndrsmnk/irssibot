@@ -6,8 +6,7 @@
 #^^^^^^
 #
 
-my @perms = ("admin");
-return if not perms(@perms);
+return reply("you lack permission.") if (not perms("admin"));
 
 
 my ($cmd, $args) = ($_{cmd}, $_{args});
@@ -38,8 +37,10 @@ if ($cmd eq "reload" and $args eq "all") {
     unload_module($args);
 
 } else {
-    say("Loading module '$args'");
-    load_module($args);
+    my $code = load_module($args);
+    if (ref($code) ne "CODE") {
+        reply("loading that module failed.");
+    } else {
+        say("Module '$args' loaded.");
+    }
 }
-
-say("Done.");

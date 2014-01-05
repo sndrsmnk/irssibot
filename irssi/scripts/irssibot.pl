@@ -310,7 +310,7 @@ sub msg {
     my ($msg, $lvl) = @_;
     if (!$lvl) { $lvl = MSGLEVEL_CRAP }
 
-    if ($$state{last_output} < int(time() - 60)) {
+    if ($$state{last_output} < int(time() - 10)) {
         $$state{last_output} = time();
         msg("");
         msg("--] irssibot [--------------------------------------------------------");
@@ -336,16 +336,22 @@ sub msg {
 
 sub reply { $_{server}->command("msg $_{target} $_{nick}, $_") for @_ }
 sub say   { $_{server}->command("msg $_{target} $_") for @_ }
-sub tell  { $_{server}->send_raw("PRIVMSG $_{nick} :$_") for @_ }
+sub tell  { $_{server}->command("msg $_{nick} $_") for @_ }
 sub match { $_{server}->masks_match("@_", $_{nick}, $_{address}) }
-
 sub perms {
     return 1 if (match($$state{bot_ownermask}));
-    my @allowed_groups = @_;
 
-    say("Access to this module is restricted to members of: ".join(", ", @allowed_groups).".");
-    msg("Rejected access to '!$_{cmd}' (args:'$args') from '$_{hostmask}'.");
+    my @wanted_perms = @_;
+    goto AUTHFAIL if (not exists $$state{user_info}{ircnick});
+    foreach my $perm (@{$$state{user_info}{permissions}}) {
+        goto AUTHOK if (grep(/^$perm$/, @wanted_perms));
+    }
+
+AUTHFAIL:
+    say("Access to this module is restricted to members of: ".join(", ", @wanted_perms).".");
+    msg("Rejected access to '!$_{cmd}' (args:'$_{args}') from '$_{hostmask}'.");
     return 0;
 
+AUTHOK:
     return 1;
 }

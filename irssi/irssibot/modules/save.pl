@@ -5,6 +5,8 @@
 #^^^^^^
 #
 
+return reply("you lack permission.") if (not perms("admin"));
+
 save_configuration();
 
 my @stat = stat($$state{bot_configfile});

@@ -9,7 +9,13 @@ my $irc_event = \%_;
 my $cmd = $$irc_event{cmd};
 my $args = $$irc_event{args};
 
+return reply("you lack permission.") if (not perms("admin", "meet", "merge"));
+
 my ($irc_nick, $user) = split(/ /, $args);
+if (($irc_nick eq "") or ($user eq "")) {
+    reply("usage is !$cmd ircNick dbUser");
+    return;
+}
 
 my $user_info = $$state{dbh}->selectrow_hashref("select * from ib_users WHERE ircnick = ?", undef, $user);
 if (not exists $$user_info{ircnick}) {

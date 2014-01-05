@@ -9,6 +9,8 @@ my $irc_event = \%_;
 my $cmd = $$irc_event{cmd};
 my $args = $$irc_event{args};
 
+return reply("you lack permission.") if (not perms("admin", "meet", "merge"));
+
 my $meet_nick = $args;
 return reply("function !meet requires a nick as argument.") if ($meet_nick eq "");
 
