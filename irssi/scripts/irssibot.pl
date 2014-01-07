@@ -71,11 +71,14 @@ if (exists $$state{bot_ownermask} and $$state{bot_ownermask} ne "") {
 }
 
 
-# Put hooks on events
-Irssi::signal_add_last("message public", "on_public");
-Irssi::signal_add_last("message own_public", "on_public");
-Irssi::signal_add_last("message private", "on_public");
-Irssi::signal_add_last("message own_private", "on_public");
+# IRC events
+foreach my $event ('channel mode changed', 'message invite', 'message topic',
+                   'message join', 'message part', 'message quit',
+                   'message kick', 'message nick', 'message own_nick',
+                   'message public', 'message own_public', 'message_private',
+                   'message_own_private') {
+    Irssi::signal_add_last($event, sub { dispatch_irc_event($event, @_); });
+}
 
 
 ####
@@ -112,90 +115,59 @@ sub initialize {
 }
 
 
-sub dispatch_event {
-    my ($server, $msg, $nick, $address, $target) = @_;
+sub dispatch_irc_event {
+    my $irc_event = shift;
 
-    # Fiddle with values so:
-    #  msgtype | target   | nick    |
-    # ---------+----------+---------+
-    #  public  | #channel | IRCNick |
-    #  private | IRCNick  | IRCNick |
-    $target = $nick if ( ! $target );
-    $nick = $server->{'nick'} if ($nick =~ /^#/);
-    $target = lc($target);
+    my $module_command = "";
+    my $irc_event_args = "";
+    my $code_args = {};
 
-    # Try and fetch UserInfo if available 
-    $$state{user_info} = updateUserInfo($address) if (defined $address);
+    if ($irc_event eq "message public") {
+        $code_args = {
+            'server' => shift,
+            'msg' => shift,
+            'nick' => shift,
+            'address' => shift,
+            'target' => shift,
+        };
 
-    # Look for a module matching the event from irc
-    my $claimed = 0;
-MODULE: foreach my $module (sort keys %{$$state{modules}}) {
-        foreach my $module_command (sort { length($a) <=> length($b) } keys %{$$state{modules}{$module}{command}}) {
-            next if ($module_command ne $irc_event);
+        # Fiddle with values so:
+        #  msgtype | target   | nick    |
+        # ---------+----------+---------+
+        #  public  | #channel | IRCNick |
+        #  private | IRCNick  | IRCNick |
+        $$code_args{nick} = $server->{'nick'} if ($$code_args{nick} =~ /^#/);
+        $$code_args{target} ||= $$code_args{nick};
+        $$code_args{target} = lc($$code_args{target});
 
-            my $log_txt = "Module ${module}::${module_command} for $irc_event";
-            if (exists $$state{user_info}{ircnick}) {
-                $log_txt .= ", user " . $$state{user_info}{ircnick} . " with perms: " . join(", ", @{$$state{user_info}{permissions}});
-            } else {
-                $log_txt .= ", unrecognised user.";
-            }
-            msg($log_txt);
+        # Match on bot commands
+        return if ($$code_args{msg} !~ m#^$$state{bot_trigger}#);
+        return if ($$code_args{msg} !~ $$state{bot_commandre});
+        $module_command = $1; $irc_event_$args = $2 || "";
+        $irc_event_args =~ s/^\s+//g; $irc_event_args =~ s/\s+$//g;
 
-            my $code = load_module($module);
-            eval {
-                $code->( {
-                    cmd      => $irc_event,
-                    args     => $args,
-                    server   => $server,
-                    msg      => $msg,
-                    nick     => $nick, 
-                    address  => $address,
-                    hostmask => $nick . '!' . $address,
-                    target   => $target
-                } );
-            };
-            if ($@) {
-                msg("Module '$command' exec gave output:");
-                msg($_) foreach $@;
-            }
+        # Fetches user info, if available, for permissionchecking.
+        $$state{user_info} = updateUserInfo($address);
 
-            # Stop command processing as match was found;
-            $claimed++;
-            last MODULE;
-        }
+    } elsif ($irc_event eq "message join") {
+        $code_args = {
+            'server' => shift,
+        };
+        $module_command = "JOIN";
+
+    } else {
+        msg("IRC event '$irc_event' was not handled properly. Oops.");
+        return;
+
     }
 
-#    if (not $claimed) {
-#        msg("No module claimed the '$irc_event' event.");
-#    }
-}
-
-sub on_public {
-    my ($server, $msg, $nick, $address, $target) = @_;
-
-    # Fiddle with values so:
-    #  msgtype | target   | nick    |
-    # ---------+----------+---------+
-    #  public  | #channel | IRCNick |
-    #  private | IRCNick  | IRCNick |
-    $target = $nick if ( ! $target );
-    $nick = $server->{'nick'} if ($nick =~ /^#/);
-    $target = lc($target);
-
-    # Match on bot commands
-    return if ($msg !~ m#^$$state{bot_trigger}#);
-    return if ($msg !~ $$state{bot_commandre});
-    my $command = $1; my $args = $2 || "";
-    $args =~ s/^\s+//g; $args =~ s/\s+$//g;
-
-    # Fetches user info, if available, for permissionchecking.
-    $$state{user_info} = updateUserInfo($address);
+    # XXX FIXME
 
     # Look for a command matching the one on irc
     my $claimed = 0;
 MODULE: foreach my $module (sort keys %{$$state{modules}}) {
-        foreach my $module_command (sort { length($a) <=> length($b) } keys %{$$state{modules}{$module}{command}}) {
-            if ($command eq $module_command) {
+        foreach my $command (sort { length($a) <=> length($b) } keys %{$$state{modules}{$module}{command}}) {
+            if ($module_command eq $command) {
 
                 my $log_txt = "Module ${module}::${module_command} for $nick/$target";
                 if (exists $$state{user_info}{ircnick}) {
