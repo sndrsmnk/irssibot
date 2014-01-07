@@ -1,11 +1,6 @@
 #!/usr/bin/perl -w
-#
-# Run for the following commands:
 # CMDS merge
-# ^^^^ 
-#
 
-my $irc_event = \%_;
 my $cmd = $$irc_event{cmd};
 my $args = $$irc_event{args};
 

@@ -1,0 +1,78 @@
+All modules must be .pl, valid Perl files.a
+
+
+Modules should not use exit(), but return() to stop processing.
+
+
+Code is evaluated in a subroutine like so:
+    sub { local $irc_event = ^{ +shift };
+      #code here
+    }
+
+
+Line numbers in compilation errors, reported inside irssi, will have
+some offset as comments /^#/ and empty lines /^$/ are filtered.
+
+
+Each module MUST have at least one line matching /^# CMDS /, followed by the
+trigger words the module responds to (!cmd) separated by spaces. Multiple
+lines matching /^# CMDS / may appear and each will be parsed sequentially.
+
+
+Certain special CMDS are available for events not triggered by PUBMSG or
+PRIVMSG event !trigger words, but IRC events, they are:
+    JOIN, PART, QUIT .. XXX FIXME
+
+
+Modules get %_ filled with the IRC event information:
+    cmd -> the <trigger word> that !triggered this module
+    args -> everything that followed the !trigger
+    server -> the Irssi::Server object for this event
+    msg -> the complete event line (!trigger with args)
+    nick -> nickname for the source of the event
+    address -> hostmask for the source of the event
+    hostmask -> nickmask for the source of the event (XXX FIXME)
+    target -> the target of any response (channel on pubmsg, nick on privmsg)
+XXX FIXME irc events?
+
+
+Modules can also access and modify the $state hashref containing the
+state of Irssibot. Inspect this hashref with Dumper(). Among other
+things, this hashref contains:
+    bot_basepath - path to bot datadir base
+    bot_commandre - regexp used for commands
+    bot_configfile - full path to configfile
+    bot_modulepath - path to module directory
+    bot_ownermask - nickmask for user with owner perm
+    bot_trigger - triggerchar (!)
+    bot_uniqueid - unique id used for claiming this bot (!owner)
+    dbh - DBI object to database
+    modules - hashref of loaded modules
+        modulename - key is module name
+            mtime - last mtime for source file (used for auto reloads)
+            code - the module's code as a reference
+            command - hashref of trigger words
+                triggerword - key is trigger word, value is always 1
+    user_info - hashref with user info from db for source of event
+        - all columns from the ib_users table
+        hostmasks - arrayref of all hostmasks for this user
+        permissions - arrayref of all permissions for this user
+
+
+A few routines are available from the main namespace:
+    reply($msg) - output to IRC '$nick, $msg' to source of event
+    say($msg) - output to IRC '$msg'
+    tell($msg) - priv msg to $nick, '$msg' (this doesn't work XXX FIXME)
+    match($hostmask) - matches the current user ($$state{user_info})
+         to the hostmask specified, returns 1 on match 0 on mismatch
+    perms("owner", "admin") - matches the current user's permissions
+         against the specified permissions, returning 1 if any matches
+         (you can also do 'perm("foo") and not perm("bla")' !)
+    updateUserInfo($address) - returns a hashref with the user info
+         from db for the $address specified
+
+
+The bot matches !trigger words against modules alphabetically according
+to your locale. The module's triggerwords are matches longest-to-shortest
+ensuring !longword wins from !long if both are supported in one module.
+

@@ -1,11 +1,6 @@
 #!/usr/bin/perl -w
-#
-# Run for the following commands:
 # CMDS owner
-# ^^^^ 
-#
 
-my $irc_event = \%_;
 my $bot_ownermask = $$irc_event{nick} . '!' . $$irc_event{address};
 
 if ((defined $$state{bot_ownermask}) and (not match($$state{bot_ownermask}))) {

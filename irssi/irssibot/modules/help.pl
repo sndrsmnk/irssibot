@@ -1,12 +1,8 @@
 #!/usr/bin/perl -w
-#
-# Commands (!command) this module triggers must follow '# CMDS ':
 # CMDS help
-#^^^^^^
-#
 
-my $cmd = $_{cmd};
-my $args = $_{args};
+my $cmd = $$irc_event{cmd};
+my $args = $$irc_event{args};
 
 if (($args ne "") and ($args !~ $$state{bot_commandre})) {
     say("Name '$args' is not a valid bot command.");

@@ -1,9 +1,5 @@
 #!/usr/bin/perl -w
-#
-# Commands (!command) this module triggers must follow '# CMDS ':
 # CMDS save
-#^^^^^^
-#
 
 return reply("you lack permission.") if (not perms("admin"));
 

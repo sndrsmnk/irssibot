@@ -1,13 +1,8 @@
 #!/usr/bin/perl -w
-#
-# Run for the following commands:
 # CMDS perm 
-# ^^^^ 
-#
 
 return reply("you lack permission.") if (not perms("admin", "perm"));
 
-my $irc_event = \%_;
 my $cmd = $$irc_event{cmd};
 my $args = $$irc_event{args};
 $args =~ s/\s{2,}/ /g;

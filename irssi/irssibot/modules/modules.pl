@@ -1,15 +1,11 @@
 #!/usr/bin/perl -w
-#
-# Commands (!command) this module triggers must follow '# CMDS ':
 # CMDS load reload
 # CMDS unload
-#^^^^^^
-#
 
 return reply("you lack permission.") if (not perms("admin"));
 
+my ($cmd, $args) = ($$irc_event{cmd}, $$irc_event{args});
 
-my ($cmd, $args) = ($_{cmd}, $_{args});
 if ($args eq "") {
     say("Usage is !$cmd <modulename>");
     return;

@@ -67,7 +67,6 @@ if (exists $$state{bot_ownermask} and $$state{bot_ownermask} ne "") {
     msg("after claiming the other modules will be autoloaded.");
     msg("A basic configuration file will then be created for you.");
     msg("");
-    # load owner module and await claiming
     load_module("owner");
 }
 
@@ -113,6 +112,64 @@ sub initialize {
 }
 
 
+sub dispatch_event {
+    my ($server, $msg, $nick, $address, $target) = @_;
+
+    # Fiddle with values so:
+    #  msgtype | target   | nick    |
+    # ---------+----------+---------+
+    #  public  | #channel | IRCNick |
+    #  private | IRCNick  | IRCNick |
+    $target = $nick if ( ! $target );
+    $nick = $server->{'nick'} if ($nick =~ /^#/);
+    $target = lc($target);
+
+    # Try and fetch UserInfo if available 
+    $$state{user_info} = updateUserInfo($address) if (defined $address);
+
+    # Look for a module matching the event from irc
+    my $claimed = 0;
+MODULE: foreach my $module (sort keys %{$$state{modules}}) {
+        foreach my $module_command (sort { length($a) <=> length($b) } keys %{$$state{modules}{$module}{command}}) {
+            next if ($module_command ne $irc_event);
+
+            my $log_txt = "Module ${module}::${module_command} for $irc_event";
+            if (exists $$state{user_info}{ircnick}) {
+                $log_txt .= ", user " . $$state{user_info}{ircnick} . " with perms: " . join(", ", @{$$state{user_info}{permissions}});
+            } else {
+                $log_txt .= ", unrecognised user.";
+            }
+            msg($log_txt);
+
+            my $code = load_module($module);
+            eval {
+                $code->( {
+                    cmd      => $irc_event,
+                    args     => $args,
+                    server   => $server,
+                    msg      => $msg,
+                    nick     => $nick, 
+                    address  => $address,
+                    hostmask => $nick . '!' . $address,
+                    target   => $target
+                } );
+            };
+            if ($@) {
+                msg("Module '$command' exec gave output:");
+                msg($_) foreach $@;
+            }
+
+            # Stop command processing as match was found;
+            $claimed++;
+            last MODULE;
+        }
+    }
+
+#    if (not $claimed) {
+#        msg("No module claimed the '$irc_event' event.");
+#    }
+}
+
 sub on_public {
     my ($server, $msg, $nick, $address, $target) = @_;
 
@@ -131,14 +188,8 @@ sub on_public {
     my $command = $1; my $args = $2 || "";
     $args =~ s/^\s+//g; $args =~ s/\s+$//g;
 
-    # Fetch user information from DB
-    $$state{user_info} = {};
-    my $user_data = $$state{dbh}->selectrow_hashref("SELECT h.hostmask AS current_hostmask, u.* FROM ib_hostmasks h, ib_users u WHERE h.users_id = u.id AND h.hostmask = ?;", undef, $address);
-    if (ref($user_data) eq 'HASH') {
-        $$state{user_info}{$_} = $$user_data{$_} foreach keys %$user_data;
-        $$state{user_info}{permissions} = $$state{dbh}->selectcol_arrayref("SELECT permission FROM ib_perms WHERE users_id = ?", undef, $$state{user_info}{id});
-        $$state{user_info}{hostmasks} = $$state{dbh}->selectcol_arrayref("SELECT hostmask FROM ib_hostmasks WHERE users_id = ?", undef, $$state{user_info}{id});
-    }
+    # Fetches user info, if available, for permissionchecking.
+    $$state{user_info} = updateUserInfo($address);
 
     # Look for a command matching the one on irc
     my $claimed = 0;
@@ -220,11 +271,7 @@ sub load_module {
         delete $$state{modules}{$module};
 
         if (open my $fh, "$module_file") {
-            my @codestring = (
-                'sub {',
-                    'local %_ = %{ +shift };',
-                    "#line 1 $module",
-            );
+            my @codestring = ( 'sub { local $irc_event = +shift; ' );
             while (my $line = <$fh>) {
                 if ($line =~ m/# CMDS ([^#]+)$/) {
                     my $module_cmds = $1;
@@ -239,7 +286,7 @@ sub load_module {
                 next if $line =~ m/^\s*$/;
                 push @codestring, $line;
             }
-            push @codestring, '}';
+            push @codestring, '}'; # closes the 'sub {'
             $$state{modules}{$module}{code} = clean_eval join "\n", @codestring;
             if (ref($$state{modules}{$module}{code}) ne "CODE") {
                 msg("Errors while loading module '$module'. It was unloaded:");
@@ -282,6 +329,21 @@ sub unload_module {
         my $modules_text = join ", ", keys %{$$state{modules}};
         msg("Currently loaded: $modules_text");
     }
+}
+
+
+sub updateUserInfo {
+    my ($address) = @_;
+
+    # Fetch user information from DB
+    my $ret = {};
+    my $user_data = $$state{dbh}->selectrow_hashref("SELECT h.hostmask AS current_hostmask, u.* FROM ib_hostmasks h, ib_users u WHERE h.users_id = u.id AND h.hostmask = ?;", undef, $address);
+    if (ref($user_data) eq 'HASH') {
+        $$ret{$_} = $$user_data{$_} foreach keys %$user_data;
+        $$ret{permissions} = $$state{dbh}->selectcol_arrayref("SELECT permission FROM ib_perms WHERE users_id = ?", undef, $$state{user_info}{id});
+        $$ret{hostmasks} = $$state{dbh}->selectcol_arrayref("SELECT hostmask FROM ib_hostmasks WHERE users_id = ?", undef, $$state{user_info}{id});
+    }
+    return $ret;
 }
 
 
@@ -333,10 +395,10 @@ sub msg {
 ####
 #### Helper functions for modules/
 
-sub reply { $_{server}->command("msg $_{target} $_{nick}, $_") for @_ }
-sub say   { $_{server}->command("msg $_{target} $_") for @_ }
-sub tell  { $_{server}->command("msg $_{nick} $_") for @_ }
-sub match { $_{server}->masks_match("@_", $_{nick}, $_{address}) }
+sub reply { $$irc_event{server}->command("msg $$irc_event{target} $$irc_event{nick}, $_") for @_ }
+sub say   { $$irc_event{server}->command("msg $$irc_event{target} $_") for @_ }
+sub tell  { $$irc_event{server}->command("msg $$irc_event{nick} $_") for @_ }
+sub match { $$irc_event{server}->masks_match("@_", $$irc_event{nick}, $$irc_event{address}) }
 sub perms {
     return 1 if (match($$state{bot_ownermask}));
 
