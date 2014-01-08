@@ -243,12 +243,12 @@ sub dispatch_irc_event {
         return;
 
     }
-    
+
     # Fetch user_info from database if $address is available.
     # This is used in perm() access controls.
     $$state{user_info} = updateUserInfo($$code_args{address}) if defined $$code_args{address};
 
-    # For perm(), we need to know the channel if available.
+    # For perms(), we need to know the channel if available.
     # Fallback to target, or set undefined.
     $$state{act_channel} = $$code_args{channel}?$$code_args{channel}:($$chanel_args{target}?$$channel_args{target}:'__undef');
 
@@ -512,7 +512,6 @@ sub perms {
     return 1 if (match($$state{bot_ownermask}));
     goto AUTHFAIL if (not exists $$state{user_info}{ircnick});
 
-    my $channel = shift;
     my @wanted_perms = @_;
     foreach my $perm (@{$$state{user_info}{permissions}{global}}) {
         goto AUTHOK if (grep(/^$perm$/, @wanted_perms));
@@ -523,7 +522,7 @@ sub perms {
 
 AUTHFAIL:
     say("Access to this module is restricted to members of: ".join(", ", @wanted_perms).".");
-    msg("Rejected access to '!$_{cmd}' (args:'$_{args}') from '$_{hostmask}'.");
+    msg("Rejected access to '!$$irc_event{cmd}' (args:'$$irc_event{args}') from '$$irc_event{nick}!$$irc_event{address}'.");
     return 0;
 
 AUTHOK:
