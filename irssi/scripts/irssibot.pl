@@ -243,10 +243,14 @@ sub dispatch_irc_event {
         return;
 
     }
-
+    
     # Fetch user_info from database if $address is available.
     # This is used in perm() access controls.
     $$state{user_info} = updateUserInfo($$code_args{address}) if defined $$code_args{address};
+
+    # For perm(), we need to know the channel if available.
+    # Fallback to target, or set undefined.
+    $$state{act_channel} = $$code_args{channel}?$$code_args{channel}:($$chanel_args{target}?$$channel_args{target}:'__undef');
 
     # Ensures sane values for 'nick' and 'target' in the code_args
     # ref for events where 'our own' events are routed to the bot.
@@ -425,14 +429,29 @@ sub initialize {
 sub updateUserInfo {
     my ($address) = @_;
 
+    return msg("No database connection.") if (not defined $$state{dbh});
+
     # Fetch user information from DB
     my $ret = {};
     my $user_data = $$state{dbh}->selectrow_hashref("SELECT h.hostmask AS current_hostmask, u.* FROM ib_hostmasks h, ib_users u WHERE h.users_id = u.id AND h.hostmask = ?;", undef, $address);
-    if (ref($user_data) eq 'HASH') {
-        $$ret{$_} = $$user_data{$_} foreach keys %$user_data;
-        $$ret{permissions} = $$state{dbh}->selectcol_arrayref("SELECT permission FROM ib_perms WHERE users_id = ?", undef, $$state{user_info}{id});
-        $$ret{hostmasks} = $$state{dbh}->selectcol_arrayref("SELECT hostmask FROM ib_hostmasks WHERE users_id = ?", undef, $$state{user_info}{id});
+    return $ret if (ref($user_data) ne 'HASH');
+    $$ret{$_} = $$user_data{$_} foreach keys %$user_data;
+
+    # Include global and per-channel permissions
+    my $sth = $$state{dbh}->prepare("SELECT permission, channel FROM ib_perms WHERE users_id = ?");
+    $sth->execute($$state{user_info}{id});
+    while (my $row = $sth->fetchrow_hashref()) {
+        if (defined $$row{channel} and $$row{channel} eq '') {
+            $$ret{permissions}{$$row{channel}}{$$row{permission}}++;
+        } else {
+            $$ret{permissions}{global}{$$row{permission}}++;
+        }
     }
+    $sth->finish();
+
+    # And all known hostmasks while we're at it
+    $$ret{hostmasks} = $$state{dbh}->selectcol_arrayref("SELECT hostmask FROM ib_hostmasks WHERE users_id = ?", undef, $$state{user_info}{id});
+
     return $ret;
 }
 
@@ -491,10 +510,14 @@ sub tell  { $$irc_event{server}->command("msg $$irc_event{nick} $_") for @_ }
 sub match { $$irc_event{server}->masks_match("@_", $$irc_event{nick}, $$irc_event{address}) }
 sub perms {
     return 1 if (match($$state{bot_ownermask}));
-
-    my @wanted_perms = @_;
     goto AUTHFAIL if (not exists $$state{user_info}{ircnick});
-    foreach my $perm (@{$$state{user_info}{permissions}}) {
+
+    my $channel = shift;
+    my @wanted_perms = @_;
+    foreach my $perm (@{$$state{user_info}{permissions}{global}}) {
+        goto AUTHOK if (grep(/^$perm$/, @wanted_perms));
+    }
+    foreach my $perm (@{$$state{user_info}{permissions}{$$state{act_channel}}}) {
         goto AUTHOK if (grep(/^$perm$/, @wanted_perms));
     }
 

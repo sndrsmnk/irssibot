@@ -26,7 +26,7 @@ if ($args ne $$state{bot_uniqueid}) {
 $$state{bot_ownermask} = $bot_ownermask;
 $$state{bot_uniqueid} = join("", (0..9, 'A'..'Z', 'a'..'z')[rand 62, rand 62, rand 62, rand 62, rand 62, rand 62, rand 62, rand 62]);
 
-msy("Bot was claimed by " . $$state{bot_ownermask});
+msg("Bot was claimed by " . $$state{bot_ownermask});
 msg("My Unique ID changed to " . $$state{bot_uniqueid});
 
 save_configuration();

@@ -56,7 +56,9 @@ things, this hashref contains:
     user_info - hashref with user info from db for source of event
         - all columns from the ib_users table
         hostmasks - arrayref of all hostmasks for this user
-        permissions - arrayref of all permissions for this user
+        permissions - hashref of all permissions for this user
+            global - hashref of all global permissions
+            channelname - hashref of all permissions for channelname
 
 
 A few routines are available from the main namespace:

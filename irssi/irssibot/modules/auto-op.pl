@@ -1,9 +1,6 @@
 #!/usr/bin/perl -w
 # CMDS message_join
 
-#qw(server channel nick address))
-
-# XXX FIXME dit moet op basis van $$irc_event{channel}
 return if (not perms("auto-op"));
 
 my $i_am_op = 0;
