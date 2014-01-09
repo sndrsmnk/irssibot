@@ -12,7 +12,7 @@ if (exists $$state{user_info}{ircnick}) {
         $log_txt .= ", with $$irc_event{target} perms (" . join(", ", keys %{$$state{user_info}{permissions}{$$irc_event{target}}}) . ")";
     }
 } else {                                                                           
-    $log_txt .= ", unrecognised user.";
+    $log_txt .= ", unrecognised user";
 }
-$log_txt .= " And you are my owner." if (match($$state{bot_ownermask}));
+$log_txt .= " - and you are my owner!" if (match($$state{bot_ownermask}));
 return reply($log_txt);
