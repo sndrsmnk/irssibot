@@ -233,6 +233,7 @@ sub dispatch_irc_event {
         # the raw event through to modules otherwise.
         if (($$code_args{msg} =~ $$state{bot_triggerre}) and ($$code_args{msg} =~ $$state{bot_commandre})) {
             $module_command = $1; $$code_args{args} = $2 || "";
+            $$code_args{cmd} = $module_command;
             $$code_args{args} =~ s/^\s+//g; $$code_args{args} =~ s/\s+$//g;
         }
 
@@ -272,7 +273,6 @@ sub dispatch_irc_event {
     }
 
     # Look for a module & command matching the event on irc
-    my $claimed = 0;
 MODULE: foreach my $module (sort keys %{$$state{modules}}) {
         foreach my $command (sort { length($a) <=> length($b) } keys %{$$state{modules}{$module}{command}}) {
             if ($module_command eq $command) {
@@ -290,7 +290,6 @@ MODULE: foreach my $module (sort keys %{$$state{modules}}) {
                 }
 
                 # Stop command processing as match was found;
-                $claimed++;
                 last MODULE;
             }
         }
