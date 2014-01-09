@@ -265,7 +265,8 @@ sub dispatch_irc_event {
     $log_txt .= $$code_args{address} ? "!$$code_args{address}" : "!address_unset";
     $log_txt .= $$code_args{target} ? "/$$code_args{target}" : "/target_unset";
     if (exists $$state{user_info}{ircnick}) {
-        $log_txt .= ", user " . $$state{user_info}{ircnick} . " with perms: " . join(", ", @{$$state{user_info}{permissions}});
+        $log_txt .= ", user " . $$state{user_info}{ircnick};
+
     } else {
         $log_txt .= ", unrecognised user.";
     }
@@ -293,10 +294,6 @@ MODULE: foreach my $module (sort keys %{$$state{modules}}) {
                 last MODULE;
             }
         }
-    }
-
-    if (not $claimed) {
-        msg("No module claimed the '$irc_event' ('$module_command') command with args: " . ($$code_args{args}?$$code_args{args}:'(none)'));
     }
 }
 
@@ -439,9 +436,9 @@ sub updateUserInfo {
 
     # Include global and per-channel permissions
     my $sth = $$state{dbh}->prepare("SELECT permission, channel FROM ib_perms WHERE users_id = ?");
-    $sth->execute($$state{user_info}{id});
+    $sth->execute($$ret{id});
     while (my $row = $sth->fetchrow_hashref()) {
-        if (defined $$row{channel} and $$row{channel} eq '') {
+        if (defined $$row{channel} and $$row{channel} ne '') {
             $$ret{permissions}{$$row{channel}}{$$row{permission}}++;
         } else {
             $$ret{permissions}{global}{$$row{permission}}++;
@@ -527,4 +524,18 @@ AUTHFAIL:
 
 AUTHOK:
     return 1;
+}
+
+
+sub isChannel {
+    my ($check_channel) = @_;
+    foreach my $channel (Irssi::channels()) {
+        next if ($$channel{name} ne $check_channel);
+        foreach my $nick ($channel->nicks()) {
+            if ($nick->{nick} eq $$irc_event{server}->{nick}) {
+                return 1;
+            }
+        }
+    }
+    return 0;
 }

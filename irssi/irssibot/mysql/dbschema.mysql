@@ -37,7 +37,7 @@ CREATE TABLE `ib_perms` (
 
     PRIMARY KEY (`id`),
     FOREIGN KEY `ib_perms_users_id_idx` (`users_id`) REFERENCES `ib_users` (`id`),
-    UNIQUE KEY `ib_perms_users_id__permission_idx` (`users_id`, `permission`)
+    UNIQUE KEY `ib_perms_users_id__permission_idx` (`users_id`, `permission`, `channel`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 
 -- INSERT INTO ib_users (ircnick, insert_time) VALUES ('Fluor', NOW());

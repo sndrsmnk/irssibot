@@ -9,11 +9,14 @@ $args =~ s/\s{2,}/ /g;
 
 my @perms = split / /, $args;
 if (scalar(@perms) < 3) {
-    reply("usage is !$cmd <add|remove> <nick> <permission>");
+    reply("usage is !$cmd <add|remove> <nick> <permission> [<channel>]");
     return;
 }
 my $mode = shift @perms;
 my $nick = shift @perms;
+
+my $channel = "";
+$channel = pop @perms if (isChannel($perms[$#perms]));
 
 my $user_info = $$state{dbh}->selectrow_hashref("SELECT * FROM ib_users WHERE ircnick = ?", undef, $nick);
 if (not exists $$user_info{ircnick}) {
@@ -24,7 +27,7 @@ if (not exists $$user_info{ircnick}) {
 if ($mode eq "add") {
     my $count = 0;
     foreach my $permission (@perms) {
-        $$state{dbh}->do("INSERT INTO ib_perms (users_id, permission) VALUES (?, ?)", undef, $$user_info{id}, $permission);
+        $$state{dbh}->do("INSERT INTO ib_perms (users_id, permission, channel) VALUES (?, ?, ?)", undef, $$user_info{id}, $permission, $channel);
         $count++;
         if ($DBI::errstr ne "") {
             say("Database failure while inserting permission '$permission'");
@@ -38,7 +41,7 @@ if ($mode eq "add") {
 if ($mode eq "remove") {
     my $count = 0;
     foreach my $permission (@perms) {
-        $$state{dbh}->do("DELETE FROM ib_perms WHERE users_id = ? AND permission = ?", undef, $$user_info{id}, $permission);
+        $$state{dbh}->do("DELETE FROM ib_perms WHERE users_id = ? AND permission = ? AND channel = ?", undef, $$user_info{id}, $permission, $channel);
         $count++;
         if ($DBI::errstr ne "") {
             say("Database failure while removing permission '$permission'");
