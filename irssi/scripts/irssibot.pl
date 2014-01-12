@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 #
 # irssibot (c) GPLv2 2014 S. Smeenk <irssi@freshdot.net>
+# $Id$
 #
 # Because existing IRC-bots suck
 # Some of this is based on http://www.perlmonks.org/bare/?node_id=180805 but this is better, ofcourse.
@@ -245,39 +246,36 @@ sub dispatch_irc_event {
 
     }
 
-    # Fetch user_info from database if $address is available.
-    # This is used in perm() access controls.
-    $$state{user_info} = updateUserInfo($$code_args{address}) if defined $$code_args{address};
-
-    # For perms(), we need to know the channel if available.
-    # Fallback to target, or set undefined.
-    $$state{act_channel} = $$code_args{channel}?$$code_args{channel}:($$chanel_args{target}?$$channel_args{target}:'__undef');
-
-    # Ensures sane values for 'nick' and 'target' in the code_args
-    # ref for events where 'our own' events are routed to the bot.
-    if (defined $$code_args{nick} or not defined $$code_args{target}) {
-        $$code_args{nick} = $server->{'nick'} if ($$code_args{nick} =~ /^#/);
-        $$code_args{target} ||= $$code_args{nick};
-        $$code_args{target} = lc($$code_args{target});
-    }
-
-    my $log_txt = ""; 
-    $log_txt = $$code_args{nick} ? "for $$code_args{nick}" : "for nick_unset";
-    $log_txt .= $$code_args{address} ? "!$$code_args{address}" : "!address_unset";
-    $log_txt .= $$code_args{target} ? "/$$code_args{target}" : "/target_unset";
-    if (exists $$state{user_info}{ircnick}) {
-        $log_txt .= ", user " . $$state{user_info}{ircnick};
-
-    } else {
-        $log_txt .= ", unrecognised user.";
-    }
-
     # Look for a module & command matching the event on irc
 MODULE: foreach my $module (sort keys %{$$state{modules}}) {
         foreach my $command (sort { length($a) <=> length($b) } keys %{$$state{modules}{$module}{command}}) {
             if ($module_command eq $command) {
 
-                $log_txt = "Module ${module}::${command} " . $log_txt;
+                # Fetch user_info from database if $address is available.
+                # This is used in perm() access controls.
+                $$state{user_info} = getUserInfo($$code_args{address}) if defined $$code_args{address};
+
+                # Ensures sane values for keys in the code_args ref for events.
+                $$code_args{nick} = $server->{'nick'} if ($$code_args{nick} =~ /^[&#]/);
+                $$code_args{target} ||= $$code_args{nick};
+                $$code_args{target} = lc($$code_args{target});
+                $$code_args{channel} = $$code_args{target} if not exists $$code_args{channel};
+
+                # Bot nick and op-state
+                $$state{bot_nick} = $$code_args{server}->{nick} if defined $$code_args{server};
+                $$state{bot_address} = $$code_args{server}->{address} if defined $$code_args{server};
+                $$state{bot_is_op} = botIsOp($$code_args{channel}) if defined $$code_args{channel};
+
+                my $log_txt = "Module ${module}::${command}";
+                $log_txt = $$code_args{nick} ? " for $$code_args{nick}" : " for nick_unset";
+                $log_txt .= $$code_args{address} ? "!$$code_args{address}" : "!address_unset";
+                $log_txt .= $$code_args{target} ? "/$$code_args{target}" : "/target_unset";
+                if (exists $$state{user_info}{ircnick}) {
+                    $log_txt .= ", user " . $$state{user_info}{ircnick};
+
+                } else {
+                    $log_txt .= ", unrecognised user.";
+                }
                 msg($log_txt);
 
                 my $code = load_module($module);
@@ -288,9 +286,6 @@ MODULE: foreach my $module (sort keys %{$$state{modules}}) {
                     msg("Module '$command' exec gave output:");
                     msg($_) foreach $@;
                 }
-
-                # Stop command processing as match was found;
-                last MODULE;
             }
         }
     }
@@ -403,7 +398,8 @@ sub initialize {
         msg("\$!: $!");
         return;
     } else {
-        $$state{dbh}->{RaiseError} = 0; # :>
+        $$state{dbh}->{RaiseError} = 0;
+        $$state{dbh}->{mysql_auto_reconnect} = 1;
         msg("Database connection OK");
     }
 
@@ -422,7 +418,7 @@ sub initialize {
 }
 
 
-sub updateUserInfo {
+sub getUserInfo {
     my ($address) = @_;
 
     return msg("No database connection.") if (not defined $$state{dbh});
@@ -526,4 +522,17 @@ sub isChannel {
         }
     }
     return 0;
+}
+
+sub botIsOp {
+    my $i_am_op = 0;
+    foreach my $channel (Irssi::channels()) {
+        next if ($$channel{name} ne $$irc_event{channel});
+        foreach my $nick ($channel->nicks()) {
+            if ($nick->{nick} eq $$irc_event{server}->{nick}) {
+                $i_am_op = 1 if ($$nick{op} == 1);
+            }
+        }
+    }
+    return $i_am_op;
 }

@@ -70,7 +70,7 @@ A few routines are available from the main namespace:
     perms("owner", "admin") - matches the current user's permissions
          against the specified permissions, returning 1 if any matches
          (you can also do 'perm("foo") and not perm("bla")' !)
-    updateUserInfo($address) - returns a hashref with the user info
+    getUserInfo($address) - returns a hashref with the user info
          from db for the $address specified
 
 
