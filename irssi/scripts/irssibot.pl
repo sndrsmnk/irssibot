@@ -277,8 +277,7 @@ MODULE: foreach my $module (sort keys %{$$state{modules}}) {
                 msg("Module '$command' exec gave output:");
                 msg($_) foreach $@;
             }
-            my $t_end = [gettimeofday];
-            my $t_str = sprintf("[%0.2fsec]", tv_interval($t_start, $t_end));
+            my $t_str = sprintf("[%0.3fsec]", tv_interval($t_start, [gettimeofday]));
 
             my $log_txt = "Module ${module}::${command} ($$code_args{trigger}) $t_str";
             $log_txt .= $$code_args{nick} ? " for $$code_args{nick}" : " for nick_unset";
