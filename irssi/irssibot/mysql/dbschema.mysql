@@ -1,3 +1,7 @@
+DROP TABLE IF EXISTS `ib_karma_who`;
+DROP TABLE IF EXISTS `ib_karma_why`;
+DROP TABLE IF EXISTS `ib_karma`;
+DROP TABLE IF EXISTS `ib_infoitems`;
 DROP TABLE IF EXISTS `ib_perms`;
 DROP TABLE IF EXISTS `ib_hostmasks`;
 DROP TABLE IF EXISTS `ib_users`;
@@ -33,6 +37,7 @@ CREATE TABLE `ib_perms` (
 
     `users_id` bigint(20) unsigned NOT NULL,
     `permission` varchar(50) NOT NULL,
+    -- empty channel = global permission
     `channel` varchar(150) NOT NULL DEFAULT '',
 
     PRIMARY KEY (`id`),
@@ -40,10 +45,65 @@ CREATE TABLE `ib_perms` (
     UNIQUE KEY `ib_perms_users_id__permission_idx` (`users_id`, `permission`, `channel`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 
--- INSERT INTO ib_users (ircnick, insert_time) VALUES ('Fluor', NOW());
--- INSERT INTO ib_hostmasks (users_id, hostmask) VALUES (1, 'Fluor!ssmeenk@dot.freshdot.net');
--- INSERT INTO ib_hostmasks (users_id, hostmask) VALUES (1, 'Fluor_!ssmeenk@dot.freshdot.net');
--- INSERT INTO ib_hostmasks (users_id, hostmask) VALUES (1, 'Phluor!ssmeenk@pound.freshdot.net');
--- INSERT INTO ib_perms (users_id, permission) VALUES(1, 'user');
--- INSERT INTO ib_perms (users_id, permission) VALUES(1, 'admin');
--- INSERT INTO ib_perms (users_id, permission, channel) VALUES(1, 'auto-op', '&irssibot');
+CREATE TABLE `ib_infoitems` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+
+    `users_id` bigint(20) unsigned NOT NULL,
+
+    `item` varchar(50) NOT NULL,
+    `value` varchar(150) NOT NULL,
+    `channel` varchar(150) NOT NULL,
+    `insert_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+    FOREIGN KEY `ib_infoitems_users_id_idx` (`users_id`) REFERENCES `ib_users` (`id`),
+    UNIQUE KEY `ib_infoitems_item__value_idx` (`item`, `value`, `channel`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ib_karma` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+
+    `item` varchar(50) NOT NULL,
+    `karma` bigint(20) signed NOT NULL DEFAULT 0,
+    `channel` varchar(150) NOT NULL,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ib_karma_item__channel_idx` (`item`, `channel`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ib_karma_why` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+
+    `karma_id` bigint(20) unsigned NOT NULL,
+
+    `direction` enum('up', 'down') NOT NULL,
+    `reason` varchar(150) NOT NULL,
+    `channel` varchar(150) NOT NULL,
+
+    `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ib_karma_why_item__channel_idx` (`direction`, `reason`, `channel`),
+    FOREIGN KEY `ib_karma_why_karma_id_idx` (`karma_id`) REFERENCES `ib_karma` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ib_karma_who` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+
+    `karma_id` bigint(20) unsigned NOT NULL,
+    `users_id` bigint(20) unsigned NOT NULL,
+
+    `direction` enum('up', 'down') NOT NULL,
+    `amount` bigint(20) unsigned NOT NULL,
+
+    `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ib_karma_who_karma_id__users_id__direction_idx` (`karma_id`, `users_id`, `direction`),
+    FOREIGN KEY `ib_karma_who_karma_id_idx` (`karma_id`) REFERENCES `ib_karma` (`id`),
+    FOREIGN KEY `ib_karma_who_users_id_idx` (`users_id`) REFERENCES `ib_users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+
+INSERT INTO ib_users (ircnick, insert_time) VALUES ('gozerbot_import_user', NOW());
+INSERT INTO ib_hostmasks (users_id, hostmask) VALUES (1, 'non existent user');

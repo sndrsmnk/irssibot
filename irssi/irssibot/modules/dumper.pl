@@ -3,8 +3,8 @@
 
 return reply("you lack permission.") if (not perms("owner"));
 
-msg("\%_");
-msg(Dumper(\%_));
+msg("\$irc_event_");
+msg(Dumper(\$irc_event));
 
 msg("");
 

@@ -10,6 +10,7 @@ use Irssi;
 use Irssi::Irc;
 use DBI;
 use Data::Dumper;
+use Time::HiRes qw[gettimeofday tv_interval];
 umask 077;
 
 $VERSION = "0.1alpha";
@@ -29,7 +30,7 @@ our $state = {
     bot_configfile  => $ENV{HOME} . '/.irssi/irssibot/irssibot-config.pl',
 
     bot_triggerre   => qr/^!/, # 'trigger char' for module commands
-    bot_commandre   => qr/([-a-zA-Z0-9]+)(?:\s(.*))?/, # this must return the cmd in $1 and the rest in $2
+    bot_commandre   => qr/([-a-zA-Z0-9]+)(?:\s(.*)|$)/, # this must return the cmd in $1 and the rest in $2
 
     bot_uniqueid    => join("", (0..9, 'A'..'Z', 'a'..'z')[rand 62, rand 62, rand 62, rand 62, rand 62, rand 62, rand 62, rand 62]),
     last_output     => 0,
@@ -74,29 +75,29 @@ if (exists $$state{bot_ownermask} and $$state{bot_ownermask} ne "") {
 
 # IRC events
 foreach my $event (
-        'channel mode changed',
-        'default event numeric',
-        'message invite',
-        'message irc action',
-        'message irc ctcp',
-        'message irc mode',
-        'message irc notice',
-        'message irc op_public',
-        'message irc own_action',
-        'message irc own_ctcp',
-        'message irc own_notice',
-        'message join',
-        'message kick',
-        'message nick',
-        'message own_nick',
-        'message own_public',
-        'message part',
-        'message public',
-        'message quit',
-        'message topic',
-        'message_own_private',
-        'message_private',
-    ) {
+            'channel mode changed',
+            'default event numeric',
+            'message invite',
+            'message irc action',
+            'message irc ctcp',
+            'message irc mode',
+            'message irc notice',
+            'message irc op_public',
+            'message irc own_action',
+            'message irc own_ctcp',
+            'message irc own_notice',
+            'message join',
+            'message kick',
+            'message nick',
+            'message own_nick',
+            'message own_public',
+            'message part',
+            'message public',
+            'message quit',
+            'message topic',
+            'message_own_private',
+            'message_private',
+        ) {
 
     Irssi::signal_add_last($event, sub { dispatch_irc_event($event, @_); });
 
@@ -110,12 +111,7 @@ foreach my $event (
 
 sub dispatch_irc_event {
     my $irc_event = shift;
-
-    # Default value for module_command is irc event type.
-    # Private/public message events override this with
-    # the command matched from the !trigger on IRC.
-    my $module_command = $irc_event;
-    $module_command =~ s#\s#_#g;
+    $irc_event =~ s/\s/_/g;
 
     # This ref will be passed to the module $code ref
     # and should contain all available information from
@@ -126,115 +122,114 @@ sub dispatch_irc_event {
 
 
 ########################################################################
-    if ($irc_event =~ m#channel mode changed#) {
+    if ($irc_event =~ m#channel_mode_changed#) {
         for my $event_arg (qw(channel setby)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#default event numeric#) {
+    } elsif ($irc_event =~ m#default_event_numeric#) {
         for my $event_arg (qw(server data nick address)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message invite#) {
+    } elsif ($irc_event =~ m#message_invite#) {
         for my $event_arg (qw(server channel nick address)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message irc (?:own_)?action#) {
+    } elsif ($irc_event =~ m#message_irc_(?:own_)?action#) {
         for my $event_arg (qw(server msg nick address target)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message irc (?:own_)?ctcp#) {
+    } elsif ($irc_event =~ m#message_irc_(?:own_)?ctcp#) {
         for my $event_arg (qw(server cmd data nick address target)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message irc (?:own_)?notice#) {
+    } elsif ($irc_event =~ m#message_irc_(?:own_)?notice#) {
         for my $event_arg (qw(server msg nick address target)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message irc mode#) {
+    } elsif ($irc_event =~ m#message_irc_mode#) {
         for my $event_arg (qw(server channel nick address mode)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message irc op_public#) {
+    } elsif ($irc_event =~ m#message_irc_op_public#) {
         for my $event_arg (qw(server msg nick address target)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message join#) {
+    } elsif ($irc_event =~ m#message_join#) {
         for my $event_arg (qw(server channel nick address)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message kick#) {
+    } elsif ($irc_event =~ m#message_kick#) {
         for my $event_arg (qw(server ichannel nick kicker address reason)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message nick#) {
+    } elsif ($irc_event =~ m#message_nick#) {
         for my $event_arg (qw(server newnick oldnick address)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message part#) {
+    } elsif ($irc_event =~ m#message_part#) {
         for my $event_arg (qw(server channel nick address reason)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message quit#) {
+    } elsif ($irc_event =~ m#message_quit#) {
         for my $event_arg (qw(server nick address reason)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message topic#) {
+    } elsif ($irc_event =~ m#message_topic#) {
         for my $event_arg (qw(server channel topic nick address)) {
             $$code_args{$event_arg} = shift;
         }
 
 
 ########################################################################
-    } elsif ($irc_event =~ m#message (?:own_)?public#) {
+    } elsif ($irc_event =~ m#message_(?:own_)?public#) {
         for my $event_arg (qw(server msg nick address target)) {
             $$code_args{$event_arg} = shift;
         }
 
-        # Rewrite $module_command if the IRC message matches
-        # the bot trigger and command regexps. This passes
-        # the raw event through to modules otherwise.
+        # See if the IRC message matches the bot trigger and command
+        # regexps. This passes the raw event through to modules otherwise.
         if (($$code_args{msg} =~ $$state{bot_triggerre}) and ($$code_args{msg} =~ $$state{bot_commandre})) {
-            $module_command = $1; $$code_args{args} = $2 || "";
-            $$code_args{cmd} = $module_command;
+            $$code_args{cmd} = $1;
+            $$code_args{args} = $2 || "";
             $$code_args{args} =~ s/^\s+//g; $$code_args{args} =~ s/\s+$//g;
         }
 
@@ -246,47 +241,57 @@ sub dispatch_irc_event {
 
     }
 
+
     # Look for a module & command matching the event on irc
 MODULE: foreach my $module (sort keys %{$$state{modules}}) {
         foreach my $command (sort { length($a) <=> length($b) } keys %{$$state{modules}{$module}{command}}) {
-            if ($module_command eq $command) {
-
-                # Fetch user_info from database if $address is available.
-                # This is used in perm() access controls.
-                $$state{user_info} = getUserInfo($$code_args{address}) if defined $$code_args{address};
-
-                # Ensures sane values for keys in the code_args ref for events.
-                $$code_args{nick} = $server->{'nick'} if ($$code_args{nick} =~ /^[&#]/);
-                $$code_args{target} ||= $$code_args{nick};
-                $$code_args{target} = lc($$code_args{target});
-                $$code_args{channel} = $$code_args{target} if not exists $$code_args{channel};
-
-                # Bot nick and op-state
-                $$state{bot_nick} = $$code_args{server}->{nick} if defined $$code_args{server};
-                $$state{bot_address} = $$code_args{server}->{address} if defined $$code_args{server};
-                $$state{bot_is_op} = botIsOp($$code_args{channel}) if defined $$code_args{channel};
-
-                my $log_txt = "Module ${module}::${command}";
-                $log_txt = $$code_args{nick} ? " for $$code_args{nick}" : " for nick_unset";
-                $log_txt .= $$code_args{address} ? "!$$code_args{address}" : "!address_unset";
-                $log_txt .= $$code_args{target} ? "/$$code_args{target}" : "/target_unset";
-                if (exists $$state{user_info}{ircnick}) {
-                    $log_txt .= ", user " . $$state{user_info}{ircnick};
-
-                } else {
-                    $log_txt .= ", unrecognised user.";
-                }
-                msg($log_txt);
-
-                my $code = load_module($module);
-                eval {
-                    $code->( $code_args );
-                };
-                if ($@) {
-                    msg("Module '$command' exec gave output:");
-                    msg($_) foreach $@;
-                }
+            $$code_args{trigger} = '';
+            if ($command eq $irc_event) {
+                $$code_args{trigger} = 'irc_event';
+            } elsif ($command eq $$code_args{cmd}) {
+                $$code_args{trigger} = 'module_command';
             }
+            next if ((not defined $$code_args{trigger}) or ($$code_args{trigger} eq ""));
+
+            # Fetch user_info from database if $address is available.
+            # This is used in perm() access controls.
+            $$state{user_info} = getUserInfo($$code_args{address}) if defined $$code_args{address};
+
+            # Ensures sane values for keys in the code_args ref for events.
+            $$code_args{nick} = $server->{'nick'} if ($$code_args{nick} =~ /^[&#]/);
+            $$code_args{target} ||= $$code_args{nick};
+            $$code_args{target} = lc($$code_args{target});
+            $$code_args{channel} = $$code_args{target} if not exists $$code_args{channel};
+
+            # Bot nick and op-state
+            $$state{bot_nick} = $$code_args{server}->{nick} if defined $$code_args{server};
+            $$state{bot_address} = $$code_args{server}->{address} if defined $$code_args{server};
+            $$state{bot_is_op} = botIsOp($$code_args{channel}) if defined $$code_args{channel};
+
+            my $t_start = [gettimeofday];
+            my $code = load_module($module);
+            eval {
+                $code->( $code_args );
+            };
+            if ($@) {
+                msg("Module '$command' exec gave output:");
+                msg($_) foreach $@;
+            }
+            my $t_end = [gettimeofday];
+            my $t_str = sprintf("[%0.2fsec]", tv_interval($t_start, $t_end));
+
+            my $log_txt = "Module ${module}::${command} ($$code_args{trigger}) $t_str";
+            $log_txt .= $$code_args{nick} ? " for $$code_args{nick}" : " for nick_unset";
+            $log_txt .= $$code_args{address} ? "!$$code_args{address}" : "!address_unset";
+            $log_txt .= $$code_args{target} ? "/$$code_args{target}" : "/target_unset";
+            if (exists $$state{user_info}{ircnick}) {
+                $log_txt .= ", user " . $$state{user_info}{ircnick};
+
+            } else {
+                $log_txt .= ", unrecognised user.";
+            }
+            msg($log_txt);
+
         }
     }
 }
