@@ -3,9 +3,6 @@
 
 return if (not perms("auto-op"));
 
-# if triggered by pubmsg, fix channel:
-$$irc_event{channel} = $$irc_event{target} if not exists $$irc_event{channel};
-
 my $i_am_op = 0;
 foreach my $channel (Irssi::channels()) {
     next if ($$channel{name} ne $$irc_event{channel});

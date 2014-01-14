@@ -273,21 +273,19 @@ MODULE: foreach my $module (sort keys %{$$state{modules}}) {
             eval {
                 $code->( $code_args );
             };
+            my $t_str = sprintf("[%0.3fsec]", tv_interval($t_start, [gettimeofday]));
             if ($@) {
-                msg("Module '$command' exec gave output:");
+                msg("Module '${module}::${command}' exec gave output:");
                 msg($_) foreach $@;
             }
-            my $t_str = sprintf("[%0.3fsec]", tv_interval($t_start, [gettimeofday]));
 
-            my $log_txt = "Module ${module}::${command} ($$code_args{trigger}) $t_str";
+            my $log_txt = "${module}::${command} ($$code_args{trigger}) $t_str";
             $log_txt .= $$code_args{nick} ? " for $$code_args{nick}" : " for nick_unset";
-            $log_txt .= $$code_args{address} ? "!$$code_args{address}" : "!address_unset";
             $log_txt .= $$code_args{target} ? "/$$code_args{target}" : "/target_unset";
             if (exists $$state{user_info}{ircnick}) {
-                $log_txt .= ", user " . $$state{user_info}{ircnick};
-
+                $log_txt .= ", " . $$state{user_info}{ircnick};
             } else {
-                $log_txt .= ", unrecognised user.";
+                $log_txt .= ", unrecognised.";
             }
             msg($log_txt);
 
@@ -510,7 +508,7 @@ sub perms {
     return 1 if (match($$state{bot_ownermask}));
     return 0 if (not exists $$state{user_info}{permissions});
     foreach (@_) { return 1 if exists $$state{user_info}{permissions}{global}{$_}; }
-    foreach (@_) { return 1 if exists $$state{user_info}{permissions}{$$state{act_channel}}{$_}; }
+    foreach (@_) { return 1 if exists $$state{user_info}{permissions}{$$irc_event{channel}}{$_}; }
     return 0;
 }
 
