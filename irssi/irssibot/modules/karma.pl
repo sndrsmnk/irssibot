@@ -12,6 +12,11 @@ my $msg = $$irc_event{msg};
 return if $msg !~ $$state{bot_triggerre};
 $msg =~ s#$$state{bot_triggerre}##;
 
+
+# this case is handled by quotes.pl
+return if $msg =~ m#^quote\s*\d+\s*(?:\+\+|\-\-)#;
+
+
 if ($$irc_event{trigger} eq "module_command") {
     if ($msg =~ /^(?:why-karma-(up|down)|why-(up|down))\s*(.*)/) {
         my $direction = $1 || $2;

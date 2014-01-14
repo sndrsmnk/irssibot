@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `ib_quotes`;
 DROP TABLE IF EXISTS `ib_karma_who`;
 DROP TABLE IF EXISTS `ib_karma_why`;
 DROP TABLE IF EXISTS `ib_karma`;
@@ -104,6 +105,20 @@ CREATE TABLE `ib_karma_who` (
     FOREIGN KEY `ib_karma_who_users_id_idx` (`users_id`) REFERENCES `ib_users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 
+CREATE TABLE `ib_quotes` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+
+    `users_id` bigint(20) unsigned NOT NULL,
+    `quote` varchar(150) NOT NULL,
+    `quote_score` bigint(20) signed NOT NULL DEFAULT 0,
+    `channel` varchar(150) NOT NULL,
+
+    `insert_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ib_quotes_quote__channel_idx` (`quote`, `channel`),
+    FOREIGN KEY `ib_quotes_users_id_idx` (`users_id`) REFERENCES `ib_users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 
 INSERT INTO ib_users (ircnick, insert_time) VALUES ('gozerbot_import_user', NOW());
 INSERT INTO ib_hostmasks (users_id, hostmask) VALUES (1, 'non existent user');
