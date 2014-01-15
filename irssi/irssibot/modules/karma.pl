@@ -1,10 +1,12 @@
 #!/usr/bin/perl -w
 # CMDS message_public
 # CMDS karma
+# CMDS who-karma-up who-up
+# CMDS who-karma-down who-down
 # CMDS why-karma-up why-up
 # CMDS why-karma-down why-down
-# CMDS badness
-# CMDS goodness
+# CMDS goodness badness
+# CMDS fans haters
 
 return if (not perms("user"));
 
@@ -74,6 +76,47 @@ if ($$irc_event{trigger} eq "module_command") {
             $ret = defined $ret ? $ret . " .. $$row{item}($$row{karma})" : "$$row{item}($$row{karma})";
         }
         reply($ret);
+
+    } elsif ($msg =~ /^(fans|haters)\s*(.*)$/) {
+        my $orig_direction = $1;
+        my $direction = $orig_direction;
+        my $item = $2;
+
+        $direction = "up" if $direction eq "fans";
+        $direction = "down" if $direction eq "haters";
+        $orig_direction = ucfirst(lc($orig_direction));
+ 
+        my $karma_item = $$state{dbh}->selectrow_hashref("
+            SELECT * FROM ib_karma WHERE item = ? AND channel = ?",
+            undef,
+            $item, $$irc_event{channel}
+        );
+        return say("No such karma item, '$item'.") if not defined $$karma_item{item};
+
+        my $sth = $$state{dbh}->prepare(
+            "SELECT kw.id AS ib_karma_who_id,
+                    kw.amount AS amount,
+                    u.id AS ib_users_id,
+                    u.*
+            FROM ib_karma_who kw, ib_users u
+            WHERE u.id = kw.users_id
+                AND karma_id = ?
+                AND direction = ?
+            ORDER BY amount DESC LIMIT 10"
+        );
+        $sth->execute($$karma_item{id}, $direction);
+
+        my $ret = undef;
+        while (my $row = $sth->fetchrow_hashref()) {
+            $ret = defined $ret ? $ret . " .. $$row{ircnick}($$row{amount})" : "$$row{ircnick}($$row{amount})";
+        }
+
+        if (defined $ret) {
+            return say("$orig_direction of '$$karma_item{item}' are $ret");
+        } else {
+            return say("No " . lc($orig_direction) . " for '$$karma_item{item}' are known.");
+        }
+
 
     } elsif ($msg =~ /^(good|bad)ness\s*$/) {
         my $direction = $1;
