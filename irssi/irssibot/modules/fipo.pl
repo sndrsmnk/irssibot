@@ -35,10 +35,12 @@ if ($msg =~ /^fipo\s*$/) {
 
         if ($day_nick ne $old_nick) {
             if ($streak_counter > ($$nick_stats{streaker}{count}||-1)) {
-                $$nick_stats{streaker}{nick} = $old_nick || $day_nick;
+                $$nick_stats{streaker}{nick} = defined $old_nick?$old_nick:$day_nick;
                 $$nick_stats{streaker}{count} = $streak_counter;
-            } elsif ($streak_counter == ($$nick_stats{streaker}{count}||-1)) {
-                $$nick_stats{streaker}{nick} = $$nick_stats{streaker}{nick} . " and " . $old_nick || $day_nick;
+            } elsif (
+                ($streak_counter == ($$nick_stats{streaker}{count}||-1))
+                and ($$nick_stats{streaker}{nick} ne "")) {
+                $$nick_stats{streaker}{nick} = $$nick_stats{streaker}{nick} . " and " . $day_nick;
                 $$nick_stats{streaker}{count} = $streak_counter;
             }
 
@@ -50,7 +52,6 @@ if ($msg =~ /^fipo\s*$/) {
             $$nick_stats{$day_nick}++;
         }
     }
-    msg(Dumper(\$nick_stats));
 
     say("Longest streak of $$nick_stats{streaker}{count} day(s) by $$nick_stats{streaker}{nick}!");
     delete $$nick_stats{streaker};

@@ -135,7 +135,7 @@ if ($msg =~ /^aq\s*(.+)/) {
 
     $$quote_info{quote_score}++ if ($direction eq "++");
     $$quote_info{quote_score}-- if ($direction eq "--");
-    return say("Quote $quote_id quote_score is now $$quote_info{quote_score}.");
+    return say("Quote $quote_id quote score is now $$quote_info{quote_score}.");
 
 
 } elsif ($msg =~ /^quote-(?:who|when)\s*(\d+)/) {

@@ -477,7 +477,7 @@ sub msg {
     if ($$state{last_output} < int(time() - 10)) {
         $$state{last_output} = time();
         msg("");
-        msg("--] irssibot [--------------------------------------------------------");
+        msg("[--] irssibot [-------------------------------------------------]");
     }
 
     foreach my $window (Irssi::windows()) {
