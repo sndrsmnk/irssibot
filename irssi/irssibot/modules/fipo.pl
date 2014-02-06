@@ -18,6 +18,7 @@ if ($msg =~ /^fipo\s*$/) {
 
     if ($fipo_nick eq "") {
         $$state{__fipo}{$$irc_event{channel}}{$day} = $$irc_event{nick};
+        save_configuration();
         return say("w00t! :D");
     } else {
         return reply("Yes! :D  It was YOU!  YOU SCORED TODAY'S FIPO!!  \\o/")
@@ -30,16 +31,20 @@ if ($msg =~ /^fipo\s*$/) {
     my $old_nick = undef;
     my $streak_counter = 1;
 
+    my $day_nick = "";
     foreach my $day (sort keys %{$$state{__fipo}{$$irc_event{channel}}}) {
-        my $day_nick = $$state{__fipo}{$$irc_event{channel}}{$day};
+        $day_nick = $$state{__fipo}{$$irc_event{channel}}{$day};
 
         if ($day_nick ne $old_nick) {
-            if ($streak_counter > ($$nick_stats{streaker}{count}||-1)) {
+            if ($streak_counter > $$nick_stats{streaker}{count}) {
                 $$nick_stats{streaker}{nick} = defined $old_nick?$old_nick:$day_nick;
                 $$nick_stats{streaker}{count} = $streak_counter;
+
             } elsif (
-                ($streak_counter == ($$nick_stats{streaker}{count}||-1))
-                and ($$nick_stats{streaker}{nick} ne "")) {
+                    ($streak_counter == $$nick_stats{streaker}{count})
+                    and ($$nick_stats{streaker}{nick} ne "")
+                    and ($$nick_stats{streaker}{nick} !~ m#\W$daynick\W#)) {
+
                 $$nick_stats{streaker}{nick} = $$nick_stats{streaker}{nick} . " and " . $day_nick;
                 $$nick_stats{streaker}{count} = $streak_counter;
             }
@@ -52,6 +57,10 @@ if ($msg =~ /^fipo\s*$/) {
             $$nick_stats{$day_nick}++;
         }
     }
+    if ($streak_counter > $$nick_stats{streaker}{count}) {
+        $$nick_stats{streaker}{nick} = $day_nick;
+        $$nick_stats{streaker}{count} = $streak_counter;
+    }
 
     say("Longest streak of $$nick_stats{streaker}{count} day(s) by $$nick_stats{streaker}{nick}!");
     delete $$nick_stats{streaker};
@@ -61,11 +70,19 @@ if ($msg =~ /^fipo\s*$/) {
     foreach my $nick (
         reverse sort { $$nick_stats{$a} <=> $$nick_stats{$b} }
             keys %$nick_stats) {
-        $msg .= ($msg?", $nick($$nick_stats{$nick})":"$nick($$nick_stats{$nick})");
+
+        # prevent hilights
+        my @letters = split(//, $nick);
+        my $out_nick = shift @letters;
+        $out_nick .= "\0030\003";
+        $out_nick .= join("", @letters);
+
+        $msg .= ($msg?", $out_nick($$nick_stats{$nick})":"$out_nick($$nick_stats{$nick})");
         last if $count++ > 5;
     }
+    $count--; # meh.
 
-    return say("Top 5 FIPO'ers: $msg");
+    return say("Top $count FIPO'ers: $msg");
     
 
 } elsif ($msg =~ /^fiporeset\s*$/) {

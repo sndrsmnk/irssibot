@@ -253,6 +253,9 @@ MODULE: foreach my $module (sort keys %{$$state{modules}}) {
             }
             next if ((not defined $$code_args{trigger}) or ($$code_args{trigger} eq ""));
 
+            # XXX this does not handle own_ event nicely
+            # test for $code_args{nick} and $code_args{target}
+
             # Fetch user_info from database if $address is available.
             # This is used in perm() access controls.
             $$state{user_info} = getUserInfo($$code_args{address}) if defined $$code_args{address};
@@ -273,11 +276,11 @@ MODULE: foreach my $module (sort keys %{$$state{modules}}) {
             eval {
                 $code->( $code_args );
             };
-            my $t_str = sprintf("[%0.3fsec]", tv_interval($t_start, [gettimeofday]));
             if ($@) {
                 msg("Module '${module}::${command}' exec gave output:");
                 msg($_) foreach $@;
             }
+            my $t_str = sprintf("[%0.3fsec]", tv_interval($t_start, [gettimeofday]));
 
             my $log_txt = "${module}::${command} ($$code_args{trigger}) $t_str";
             $log_txt .= $$code_args{nick} ? " for $$code_args{nick}" : " for nick_unset";
@@ -460,12 +463,17 @@ sub load_configuration {
 
 
 sub save_configuration {
+    my $temp = {};
+    foreach my $key (keys %$state) {
+        # XXX not nice. use prefix?
+        next if $key =~ m#^(?:act_channel|user_info|dbh|bot_is_op|modules)$#;
+        $$temp{$key} = $$state{$key};
+    }
+
     open (FD, ">$$state{bot_configfile}") or die "Problems while writing configuration file: $!\n";
-    my $temp = $state;
-    delete $$temp{modules};
     print FD Dumper($temp);
-    $temp = {}; undef $temp;
     close(FD);
+    $temp = {}; undef $temp;
     msg("Irssibot configuration file was saved.");
 }
 
