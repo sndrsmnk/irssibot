@@ -41,9 +41,9 @@ if ($whois_host) {
 }
 
 $user_info = $$state{dbh}->selectrow_hashref("SELECT * FROM ib_users WHERE ircnick = ?", undef, $whois_nick);
-if (exists $$user_info{ircnick}) {
+if (exists $$user_info{ircnick} and not $recognized) {
     $out .= "but a registered user named $whois_nick was found. ";
-} else {
+} elsif (not exists $$user_info{ircnick} and not $recognized) {
     return say($out . "and no registered user named $whois_nick was found either.");
 }
 

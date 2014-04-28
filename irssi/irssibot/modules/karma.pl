@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
 # CMDS message_public
 # CMDS karma
-# CMDS who-karma-up who-up
-# CMDS who-karma-down who-down
-# CMDS why-karma-up why-up
-# CMDS why-karma-down why-down
+# CMDS who-karma-up who-up karma-who-up karma-whoup
+# CMDS who-karma-down who-down karma-who-down karma-whodown
+# CMDS why-karma-up why-up karma-why-up karma-whyup
+# CMDS why-karma-down why-down karma-why-down karma-whydown
 # CMDS goodness badness
 # CMDS fans haters
 

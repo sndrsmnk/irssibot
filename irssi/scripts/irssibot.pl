@@ -468,6 +468,7 @@ sub save_configuration {
         # XXX not nice. use prefix?
         next if $key =~ m#^(?:act_channel|user_info|dbh|bot_is_op|modules)$#;
         $$temp{$key} = $$state{$key};
+        msg("$key = " . $$state{$key});
     }
 
     open (FD, ">$$state{bot_configfile}") or die "Problems while writing configuration file: $!\n";
