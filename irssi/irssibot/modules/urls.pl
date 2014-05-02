@@ -7,7 +7,7 @@ return if (not perms("user"));
 my $msg = $$irc_event{msg};
 my $channel = $$irc_event{channel};
 
-if ($msg =~ m/((?:https?|\bwww\.)(?::\/\/)?[a-zA-Z0-9\-\@;\/?:&=%\$_.+.Xresources',~\#]*(\([a-zA-Z0-9\-\@;\/?:&=%\$_.+.Xresources',~\#]*\)|[a-zA-Z0-9\-\@;\/?:&=%\$_+*~])+)/) {
+if ($msg =~ m/((?:https?|\bwww\.)?(?::\/\/)?[a-zA-Z0-9\-\@;\/?:&=%\$_.+.Xresources',~\#]*(\([a-zA-Z0-9\-\@;\/?:&=%\$_.+.Xresources',~\#]*\)|[a-zA-Z0-9\-\@;\/?:&=%\$_+*~])+)/) {
     if ($$state{__urls}{$channel}{url} ne $1) {
         $$state{__urls}{$channel}{url} = $1;
         $$state{__urls}{$channel}{updated} = 0;
