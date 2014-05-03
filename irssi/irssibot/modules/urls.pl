@@ -14,10 +14,6 @@ if ($msg =~ m/((?:https?\:\/\/)?[a-z0-9]+\.[a-z0-9\-\.]+(?:\/[^\s]+)*[^\s])/i) {
     }
 }
 
-if ($$state{__urls}{$channel}{url} !~ m#^https?://#) {
-    $$state{__urls}{$channel}{url} = "http://" . $$state{__urls}{$channel}{url};
-}
-
 if ($msg =~ m"^!@(?:\s(\-f))?") {
     my $force = $1;
 
@@ -52,7 +48,10 @@ return;
 sub fetchURLinfo {
     my ($url) = @_;
     my $ret = {};
-   
+    
+    # URLs must be absolute
+    $url = "http://" . $url if ($url !~ m#^https?://#);
+
     my $lwp = LWP::UserAgent->new;
     $lwp->max_redirect(7);
     $lwp->requests_redirectable(['GET', 'HEAD']);
