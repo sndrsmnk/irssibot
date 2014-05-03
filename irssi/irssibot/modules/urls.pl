@@ -7,11 +7,15 @@ return if (not perms("user"));
 my $msg = $$irc_event{msg};
 my $channel = $$irc_event{channel};
 
-if ($msg =~ m/((?:https?|\bwww\.)?(?::\/\/)?[a-zA-Z0-9\-\@;\/?:&=%\$_.+.Xresources',~\#]*(\([a-zA-Z0-9\-\@;\/?:&=%\$_.+.Xresources',~\#]*\)|[a-zA-Z0-9\-\@;\/?:&=%\$_+*~])+)/) {
+if ($msg =~ m#((?:https?://|\bwww\.)?[a-z0-9\-]+[\.a-z0-9]+/[^\s]+)#i) {
     if ($$state{__urls}{$channel}{url} ne $1) {
         $$state{__urls}{$channel}{url} = $1;
         $$state{__urls}{$channel}{updated} = 0;
     }
+}
+
+if ($$state{__urls}{$channel}{url} !~ m#^https?://#) {
+    $$state{__urls}{$channel}{url} = "http://" . $$state{__urls}{$channel}{url};
 }
 
 if ($msg =~ m"^!@(?:\s(\-f))?") {

@@ -9,6 +9,8 @@ Insert disclaimers here.
 ------------------------------------------------
 No. Really. There may be dragons.
 
+You may need Ubuntu packages: irssi, mysql-server, libdbi-perl, libwww-perl.
+
 Install basic gist:
 
  * Create a new user '**irssibot**' (or joe, polly or finnigan...)
