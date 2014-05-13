@@ -148,27 +148,30 @@ if ($$irc_event{trigger} eq "module_command") {
     }
 
 
-} elsif ($msg =~ /^(.+?)([\+\-]{2})(?:\s*#\s*(.*))?/) {
+} elsif ($msg =~ /^(.+?)\s*([\+\-]{2})(?:\s*#\s*(.*))?/) {
     my $item = $1;
     my $direction = $2;
     my $reason = $3;
 
     my $update_sql = "";
+    my $initialvalue = 0;
     if ($direction eq "++") {
         $direction = "up";
         $update_sql = "karma = karma + 1";
+        $initialvalue = 1;
     } elsif ($direction eq "--") {
         $direction = "down";
         $update_sql = "karma = karma - 1";
+        $initialvalue = -1;
     }
 
     my $rv = $$state{dbh}->do("
         INSERT INTO ib_karma (item, karma, channel)
-        VALUES (?, 1, ?)
+        VALUES (?, ?, ?)
         ON DUPLICATE KEY
             UPDATE $update_sql",
         undef,
-        $item, $$irc_event{channel}
+        $item, $initialvalue, $$irc_event{channel}
     );
 
     my $karma_item = $$state{dbh}->selectrow_hashref("
