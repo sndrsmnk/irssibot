@@ -61,10 +61,6 @@ return;
 sub fetchURL {
     my ($url) = @_;
     
-    open(TMP, ">/tmp/lala.dbg");
-    print TMP "$url\n";
-    close(TMP);
-
     my $lwp = LWP::UserAgent->new;
     $lwp->max_redirect(7);
     $lwp->requests_redirectable(['GET', 'HEAD']);
