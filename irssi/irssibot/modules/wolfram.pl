@@ -41,10 +41,10 @@ my $nodeset = $xp->find("//pod[\@id='Result']/subpod/plaintext/text()");
 my ($node) = $nodeset->get_nodelist;
 if (defined $node) { $query_result = XML::XPath::XMLParser::as_string($node); }
 
-if ( ($query_input =~ m#^\s*$#) or ($query_result =~ m#^\s*$#) ) {
+if ( ($query_input =~ m/^\s*$/) or ($query_result =~ m/^\s*$/) ) {
     return reply("query not understood.");
 } else {
-    return reply($query_input . " = " . $query_result;
+    return reply($query_input . " = " . $query_result);
 }
 
 return;
@@ -58,7 +58,6 @@ return;
 
 sub fetchURL {
     my ($url) = @_;
-    
     my $lwp = LWP::UserAgent->new;
     $lwp->max_redirect(7);
     $lwp->requests_redirectable(['GET', 'HEAD']);
@@ -71,9 +70,7 @@ sub fetchURL {
         msg("---- " . $res->status_line);
         say("wolfram: " . $res->status_line);
         return undef;
-
     } else {
         return $res->content;
-
     }
 }
