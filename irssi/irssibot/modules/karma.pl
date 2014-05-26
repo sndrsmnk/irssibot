@@ -20,9 +20,9 @@ return if $msg =~ m#^quote\s*\d+\s*(?:\+\+|\-\-)#;
 
 
 if ($$irc_event{trigger} eq "module_command") {
-    if ($msg =~ /^(?:why-karma-(up|down)|why-(up|down))\s*(.*)/) {
-        my $direction = $1 || $2;
-        my $item = $3;
+    if ($msg =~ /^(?:karma-why-|why-karma-|why-)(up|down)\s*(.*)/) {
+        my $direction = $1;
+        my $item = $2;
         $direction = "up" if $direction =~ m#^u#i;
         $direction = "down" if $direction =~ m#^d#i;
         return if (not defined $item or $item eq "");
@@ -50,9 +50,9 @@ if ($$irc_event{trigger} eq "module_command") {
         }
 
 
-    } elsif ($msg =~ /^(?:who-karma-(up|down)|who-(up|down))\s*(.*)/) {
-        my $direction = $1 || $2;
-        my $item = $3;
+    } elsif ($msg =~ /^(?:karma-who|who-karma-|who-)(up|down)\s*(.*)/) {
+        my $direction = $1;
+        my $item = $2;
         $direction = "up" if $direction =~ m#^u#i;
         $direction = "down" if $direction =~ m#^d#i;
         return if (not defined $item or $item eq "");
@@ -78,8 +78,8 @@ if ($$irc_event{trigger} eq "module_command") {
         reply($ret);
 
     } elsif ($msg =~ /^(fans|haters)\s*(.*)$/) {
-        my $orig_direction = $1;
-        my $direction = $orig_direction;
+        my $orig_direction = $1; 
+        my $direction = $orig_direction; # duplicate for display purposes
         my $item = $2;
 
         $direction = "up" if $direction eq "fans";

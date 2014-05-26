@@ -95,8 +95,8 @@ foreach my $event (
             'message public',
             'message quit',
             'message topic',
-            'message_own_private',
-            'message_private',
+            'message own_private',
+            'message private',
         ) {
 
     Irssi::signal_add_last($event, sub { dispatch_irc_event($event, @_); });
@@ -231,6 +231,13 @@ sub dispatch_irc_event {
             $$code_args{cmd} = $1;
             $$code_args{args} = $2 || "";
             $$code_args{args} =~ s/^\s+//g; $$code_args{args} =~ s/\s+$//g;
+        }
+
+
+########################################################################
+    } elsif ($irc_event =~ m#message_(?:own_)?private#) {
+        for my $event_arg (qw(server msg nick address)) {
+            $$code_args{$event_arg} = shift;
         }
 
 
