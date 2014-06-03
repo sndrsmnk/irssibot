@@ -2,6 +2,8 @@
 # CMDS message_public
 #
 use LWP::UserAgent;
+use HTML::Entities;
+
 
 return if (not perms("user"));
 my $msg = $$irc_event{msg};
@@ -90,6 +92,8 @@ sub fetchURLinfo {
     } else {
         $$ret{title} = "content-type: " . $$ret{content_type};
     }
+
+    $$ret{title} = decode_entities($$ret{title});
 
     return $ret;
 }

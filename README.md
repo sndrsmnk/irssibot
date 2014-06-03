@@ -9,7 +9,7 @@ Insert disclaimers here.
 ------------------------------------------------
 No. Really. There may be dragons.
 
-You may need Ubuntu packages: irssi, mysql-server, libdbi-perl, libwww-perl.
+You may need Ubuntu packages: irssi, mysql-server, libdbi-perl, libwww-perl, liburi-escape-perl, libhtml-html5-entities-perl, libxml-xpath-perl
 
 Install basic gist:
 
