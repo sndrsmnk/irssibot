@@ -33,6 +33,14 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
             $oldnick = $nick;
         }
     }
+    # check again at end of loop. streak might be 'in progress'... 
+    if ($streak > $winningstreak) {
+        $winningstreak = $streak;
+        @winningstreaknick = ( $streaknick );
+    } elsif ($streak == $winningstreak) {
+        push @winningstreaknick, $streaknick unless grep { /^$streaknick$/ } @winningstreaknick;
+    }
+
     say("Longest streak of $winningstreak day(s) by " . join(", ", @winningstreaknick) . "!");
     
     my $count = 1;

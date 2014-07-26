@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# CMDS whoami
+# CMDS whoami test
 
 my $log_txt = "you are $$irc_event{nick}!$$irc_event{address} at $$irc_event{target}";
 if (exists $$state{user_info}{ircnick}) {
