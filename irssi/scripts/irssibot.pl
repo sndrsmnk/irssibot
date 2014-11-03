@@ -66,8 +66,8 @@ if (exists $$state{bot_ownermask} and $$state{bot_ownermask} ne "") {
     msg("Use the Unique ID with '!owner ...' on IRC to claim this bot.");
     msg("");
     msg("Until claimed, only the 'owner' module will be loaded,");
-    msg("after claiming the other modules will be autoloaded.");
-    msg("A basic configuration file will then be created for you.");
+    msg("after claiming the other modules will be auto loaded");
+    msg("and a configuration file will then be created for you.");
     msg("");
     load_module("owner");
 }

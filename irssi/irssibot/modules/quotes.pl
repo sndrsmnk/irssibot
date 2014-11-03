@@ -2,6 +2,7 @@
 # CMDS aq dq iq
 # CMDS lq l3q lq3
 # CMDS rq r3q rq3
+# CMDS sq
 # CMDS quote-who quote-when
 # CMDS q quote
 
@@ -24,6 +25,31 @@ if ($msg =~ /^aq\s*(.+)/) {
 
     my $quote_id = $$state{dbh}->{mysql_insertid};
     return say("Quote $quote_id added.");
+
+
+} elsif ($msg =~ /^sq\s*(.+)/) {
+    my $pattern = $1;
+
+    my $sth = $$state{dbh}->prepare("SELECT * FROM ib_quotes WHERE quote RLIKE ? AND channel = ?");
+    $sth->execute($pattern, $$irc_event{channel});
+
+    my $nrows = $sth->rows();
+    return say("No quote matched '$pattern'") if not $nrows;
+
+    my @quotes = ();
+    while (my $row = $sth->fetchrow_hashref()) { push @quotes, $row; }
+
+    if ($nrows > 3) {
+        foreach my $id (int(rand($nrows)), int(rand($nrows)), int(rand($nrows))) {
+            say("#" . $quotes[$id]->{id} . " " . $quotes[$id]->{quote});
+        }
+        return;
+    }
+
+    foreach my $q (@quotes) {
+        say("#" . $q->{id} . " " . $q->{quote});
+    }
+    return;
 
 
 } elsif ($msg =~ /^dq\s*(\d+)/) {

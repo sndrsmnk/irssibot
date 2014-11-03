@@ -1,1 +1,0 @@
-../irssibot.pl

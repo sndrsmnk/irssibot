@@ -9,7 +9,7 @@ $args =~ s/\s{2,}/ /g;
 
 my @perms = split / /, $args;
 if (scalar(@perms) < 3) {
-    reply("usage is !$cmd <add|remove> <nick> <permission> [<channel>]");
+    reply("usage is !$cmd <add|remove> <nick> <permission1> [..<permissionN>] [<channel>]");
     return;
 }
 my $mode = shift @perms;

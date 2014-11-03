@@ -1,8 +1,10 @@
 #!/usr/bin/perl -w
 # CMDS whois
 
-return if not exists $$irc_event{args} or $$irc_event{args} eq "";
+
 return if not perms("user");
+return if not exists $$irc_event{args} or $$irc_event{args} eq "";
+return if $$irc_event{args} =~ m#(\d+\.\d+\.\d+\.\d+)#;
 
 
 my $whois_nick = $$irc_event{args};
