@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-# CMDS message_private
 # CMDS wolfram w
 # CMDS gcalc calc
 #
@@ -8,20 +7,17 @@ use URI::Escape;
 use XML::XPath;
 use XML::XPath::XMLParser;
 
-#
-# Admin can /msg the bot '!set wolfrap_app_id IDHERE', handle that:
-if (($$irc_event{irc_event} eq "message_private") and ($$irc_event{target} eq $$irc_event{channel})) {
-    if ($$irc_event{msg} =~ m#^!set\s+wolfram_app_id\s+(.*)#) {
-        return say("You no admin. Go away.") if not perms('admin');
-        $$state{__wolfram}{appid} = $1;
-        save_configuration();
-        return say("Wolfram application ID set to '".$$state{__wolfram}{appid}."'");
-    }
-    return;
-}
-
 my $wolfram_app_id = "";
-$wolfram_app_id = (exists $$state{__wolfram}{appid} ? $$state{__wolfram}{appid} : "");
+{
+    # Fix old appid config.
+    if (exists $$state{__wolfram}{appid}) {
+        msg("Wolfram updating configuration.");
+        $$state{__wolfram_appid} = $$state{__wolfram}{appid};
+        delete $$state{__wolfram};
+        save_configuration();
+    }
+}
+$wolfram_app_id = (exists $$state{__wolfram_appid} ? $$state{__wolfram_appid} : "");
 return reply("the bot owner should configure the Wolfram API ID first.") if $wolfram_app_id eq "";
 
 my $args = $$irc_event{args};

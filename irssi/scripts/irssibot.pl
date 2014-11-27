@@ -1,19 +1,22 @@
 #!/usr/bin/perl -w
 #
 # irssibot (c) GPLv2 2014 S. Smeenk <irssi@freshdot.net>
-# $Id$
 #
 # Because existing IRC-bots suck
-# Some of this is based on http://www.perlmonks.org/bare/?node_id=180805 but this is better, ofcourse.
 # 
 use Irssi;
 use Irssi::Irc;
+use Socket;
+use Socket6;
+use IO::Handle;
 use DBI;
 use Data::Dumper;
 use Time::HiRes qw[gettimeofday tv_interval];
 umask 077;
+$|++;
 
-$VERSION = "0.1alpha";
+
+$VERSION = "20141127";
 %IRSSI = (
     authors     => 'Sander Smeenk',
     contact     => 'irssi@freshdot.net',
@@ -24,6 +27,7 @@ $VERSION = "0.1alpha";
 );
 
 
+# Initialise with defaults until a proper config is established.
 our $state = {
     bot_basepath    => $ENV{HOME} . '/.irssi/irssibot',
     bot_modulepath  => $ENV{HOME} . '/.irssi/irssibot/modules',
@@ -35,6 +39,10 @@ our $state = {
     bot_uniqueid    => join("", (0..9, 'A'..'Z', 'a'..'z')[rand 62, rand 62, rand 62, rand 62, rand 62, rand 62, rand 62, rand 62]),
     last_output     => 0,
     modules         => {},
+
+    udp_listen_ip   => 127.0.0.1,
+    udp_listen_port => 47774,
+    udp_listen_pass => 'irssibot',
 };
 
 
@@ -71,6 +79,10 @@ if (exists $$state{bot_ownermask} and $$state{bot_ownermask} ne "") {
     msg("");
     load_module("owner");
 }
+
+
+my $udp_sock = my $udp_tag = undef;
+openUDPSocket($udp_tag);
 
 
 # IRC events
@@ -113,9 +125,9 @@ sub dispatch_irc_event {
     my $irc_event = shift;
     $irc_event =~ s/\s/_/g;
 
-    # This ref will be passed to the module $code ref
-    # and should contain all available information from
-    # Irssi, see the for-loops and doc/irssi/signals.txt.gz
+    # The $code_args hashref is passed to the module handling this IRC
+    # event. Make sure to copy all available parameters for each event
+    # as defined in IRSSI's signals.txt.gz documentation.
     my $code_args = {
         irc_event => $irc_event,
     };
@@ -225,8 +237,9 @@ sub dispatch_irc_event {
             $$code_args{$event_arg} = shift;
         }
 
-        # See if the IRC message matches the bot trigger and command
-        # regexps. This passes the raw event through to modules otherwise.
+        # If the public message matches the bot trigger and command regexps
+        # we fill 'cmd' and 'args' keys with the triggercommand and optional
+        # arguments. The 'cmd' is matched against module defined CMDS later.
         if (($$code_args{msg} =~ $$state{bot_triggerre}) and ($$code_args{msg} =~ $$state{bot_commandre})) {
             $$code_args{cmd} = $1;
             $$code_args{args} = $2 || "";
@@ -238,6 +251,15 @@ sub dispatch_irc_event {
     } elsif ($irc_event =~ m#message_(?:own_)?private#) {
         for my $event_arg (qw(server msg nick address)) {
             $$code_args{$event_arg} = shift;
+        }
+        
+        # If the private message matches the bot trigger and command regexps
+        # we fill 'cmd' and 'args' keys with the triggercommand and optional
+        # arguments. The 'cmd' is matched against module defined CMDS later.
+        if (($$code_args{msg} =~ $$state{bot_triggerre}) and ($$code_args{msg} =~ $$state{bot_commandre})) {
+            $$code_args{cmd} = $1;
+            $$code_args{args} = $2 || "";
+            $$code_args{args} =~ s/^\s+//g; $$code_args{args} =~ s/\s+$//g;
         }
 
 
@@ -308,9 +330,8 @@ MODULE: foreach my $module (sort keys %{$$state{modules}}) {
 
 ###
 ###
-### libs/ stuff
+### libs stuff
 ###
-
 
 sub clean_eval { return eval shift; }
 sub load_module {
@@ -382,7 +403,7 @@ sub load_module {
         }
     }
 
-    # Code in $$state is (still?) fresh
+    # Code in $$state is fresh
     return $$state{modules}{$module}{code};
 }
 
@@ -490,7 +511,7 @@ sub msg {
     my ($msg, $lvl) = @_;
     if (!$lvl) { $lvl = MSGLEVEL_CRAP }
 
-    if ($$state{last_output} < int(time() - 10)) {
+    if ($$state{last_output} < int(time() - 300)) {
         $$state{last_output} = time();
         msg("");
         msg("[--] irssibot [-------------------------------------------------]");
@@ -512,7 +533,7 @@ sub msg {
 
 ####
 ####
-#### Helper functions for modules/
+#### Helper functions for modules
 
 sub reply { $$irc_event{server}->command("msg $$irc_event{target} $$irc_event{nick}, $_") for @_ }
 sub say   { $$irc_event{server}->command("msg $$irc_event{target} $_") for @_ }
@@ -529,6 +550,14 @@ sub perms {
 }
 
 
+sub findChannel {
+    my ($check_channel) = @_;
+    foreach my $channel (Irssi::channels()) {
+        next if ($$channel{name} ne $check_channel);
+        return $channel;
+    }
+    return undef;
+}
 sub isChannel {
     my ($check_channel) = @_;
     foreach my $channel (Irssi::channels()) {
@@ -553,4 +582,117 @@ sub botIsOp {
         }
     }
     return $i_am_op;
+}
+
+
+
+####
+####
+#### UDP handling
+
+sub openUDPSocket {
+    # Test for sane config
+    foreach my $testKey (qw(udp_listen_ip udp_listen_port udp_listen_pass)) {
+        if (not defined $$state{$testKey} or $$state{$testKey} eq "") {
+            msg("UDP listener is not configured correctly: '$testKey' is unset.");
+            return undef;
+        }
+    }
+
+    # Close and remove listener if reopening
+    if (defined $udp_tag) {
+        msg("Closing UDP listener '$udp_tag'");
+        Irssi::input_remove($udp_tag);
+        close($udp_sock);
+    }
+
+    # Set up socket
+    $udp_sock = gensym;
+    if (not socket($udp_sock, PF_INET6, SOCK_DGRAM, getprotobyname('udp'))) {
+        return msg("UDP socket failed: $!");
+    }
+
+    if (not setsockopt($udp_sock, SOL_SOCKET, SO_REUSEADDR, pack("l", 1))) {
+        return msg("UDP setsockopt failed: $!");
+    }
+
+    if (not bind($udp_sock, pack_sockaddr_in6($$state{udp_listen_port}, inet_pton(AF_INET6, $$state{udp_listen_ip})))) {
+        return msg("UDP bind failed: $!");
+    }
+
+    # Add socket to input events
+    $udp_tag = Irssi::input_add(fileno($udp_sock), INPUT_READ, "handleUDP", "");
+
+    if (not defined $udp_tag or $udp_tag eq "") {
+        return msg("UDP irssi event trigger add failed.");
+    } else {
+        return msg("UDP socket opened on $$state{udp_listen_ip} port $$state{udp_listen_port}, tag '$udp_tag'");
+    }
+}
+
+
+sub handleUDP {	
+  	my $srcPaddr = recv($udp_sock, my $udp_msg, 1000, 0) or warn "$!\n";
+    my ($srcHost, $srcPort) = getnameinfo($srcPaddr, NI_NUMERICHOST | NI_NUMERICSERV);
+    $udp_msg =~ s/\r?\n//g;
+
+    # UDP 'protocol' definition:
+    #
+    # Gozerbot style '<password> <channel> <...message...>'
+    #
+    # Irssibot style '<password> <servertag> <channel> <...message...>'
+    # Irssibot can be on the same channel on different networks.
+    # Irssibot also allows sending messages to channels it has not joined. (mode -n)
+    
+    # At least three words are expected
+    if ($udp_msg !~ m#^\S+\s+\S+\s+\S+#) {
+        msg("Bad UDP packet from $srcHost:$srcPort");
+        msg("UDP message was: '$udp_msg'");
+        return;
+    }
+
+    # Strip off the password
+    $udp_msg =~ s#^(\S+)\s##;
+    my $pass = $1;
+
+    # Strip off the channel
+    $udp_msg =~ s#^(\S+)\s##;
+    my $chan = $1;
+
+    # Check if $chan looks like a channel, else interpret it as servertag
+    my $server_tag = undef;
+    if ($chan !~ m/^[#&]/) {
+        $server_tag = $chan;
+        # Strip off the actual channel
+        $udp_msg =~ s#^(\S+)\s##;
+        $chan = $1;
+    }
+
+    if ($pass ne $$state{udp_listen_pass}) {
+        msg("Bad UDP password '$pass' from $srcHost:$srcPort to '$chan'");
+        msg("UDP message was: '$udp_msg'");
+        return;
+    }
+
+    my $server;
+    if (defined $server_tag) {
+        $server = Irssi::server_find_tag($server_tag);
+        if (not ref($server)) {
+            msg("UDP message from $srcHost:$srcPort to '$chan' on servertag '$server_tag' but tag not found.");
+            msg("UDP message was: '$udp_msg'");
+            return;
+        }
+    } else {
+        my $channelObj = findChannel($chan);
+        if (not ref($channelObj)) {
+            msg("UDP message from $srcHost:$srcPort to '$chan' with no specific servertag, but channel not found.");
+            msg("UDP message was: '$udp_msg'");
+            return;
+        }
+        $server = $$channelObj{server};
+    }
+
+    msg("UDP message from $srcHost:$srcPort to '$chan'");
+    msg("UDP message was: '$udp_msg'");
+    $server->send_raw("PRIVMSG $chan :$udp_msg");
 }
