@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 # CMDS mac
 #
-# wget -O ~/.irssi/irssibot/oui.txt
+# wget -O ~/.irssi/irssibot/oui.txt \
 #     http://www.ieee.org/netstorage/standards/oui.txt
 #
 my ($cfgdir) = $$state{bot_configfile} =~ m#^(.*)/#;
@@ -10,9 +10,10 @@ my $oui_perl = $cfgdir . "/oui.txt.perlObj";
 
 
 if ($$irc_event{args} =~ m#rebuild#) {
+    return if (not perms('admin'));
     if (-e $oui_perl) {
         unlink $oui_perl;
-        return reply("the OUI database was removed.");
+        return reply("the OUI database was removed. Next lookup will (try to) rebuild it.");
 
     } else {
         return reply("no OUI database exists!");
@@ -74,9 +75,9 @@ $mac = substr($mac, 0, 6);
 
 
 if (exists $$oui_db{$mac}) {
-    return reply("$mac: " . $$oui_db{$mac});
+    return reply("$mac is " . $$oui_db{$mac});
 
 } else {
-    return reply("$mac: undefined");
+    return reply("$mac is undefined");
 
 }
