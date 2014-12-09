@@ -2,17 +2,7 @@
 # CMDS message_join op
 
 return if (not perms("auto-op"));
-
-my $i_am_op = 0;
-foreach my $channel (Irssi::channels()) {
-    next if ($$channel{name} ne $$irc_event{channel});
-    foreach my $nick ($channel->nicks()) {
-        if ($nick->{nick} eq $$irc_event{server}->{nick}) {
-            $i_am_op = 1 if ($$nick{op} == 1);
-        }
-    }
-}
-return msg("I did not have op on $$irc_event{channel} to auto-op $$state{user_info}{ircnick}.") if not $i_am_op;
+return if not botIsOp($$irc_event{channel});
 
 my $op_nick = $$irc_event{nick};
 if (exists $$irc_event{cmd} and $$irc_event{cmd} eq "op") {
