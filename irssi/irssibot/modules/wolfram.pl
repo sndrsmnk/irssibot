@@ -10,14 +10,14 @@ use XML::XPath::XMLParser;
 my $wolfram_app_id = "";
 {
     # Fix old appid config.
-    if (exists $$state{__wolfram}{appid}) {
+    if (exists $$state{__wolfram} and exists $$state{__wolfram}{appid}) {
         msg("Wolfram updating configuration.");
-        $$state{__wolfram_appid} = $$state{__wolfram}{appid};
+        $$state{wolfram_appid} = $$state{__wolfram}{appid};
         delete $$state{__wolfram};
         save_configuration();
     }
 }
-$wolfram_app_id = (exists $$state{__wolfram_appid} ? $$state{__wolfram_appid} : "");
+$wolfram_app_id = (exists $$state{wolfram_appid} ? $$state{wolfram_appid} : "");
 return reply("the bot owner should configure the Wolfram API ID first.") if $wolfram_app_id eq "";
 
 my $args = $$irc_event{args};

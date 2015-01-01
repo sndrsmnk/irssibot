@@ -14,8 +14,8 @@ $$irc_event{channel} = "#cistron" if $$irc_event{channel} eq "#irssibot";
 if ($msg =~ /^fipostats(?:\s+.*)?/) {
     my $oldnick = my $streaknick = ""; my @winningstreaknick = ();
     my $streak = my $winningstreak = 1; my $nick_stats = {};
-    foreach my $day (sort keys %{$$state{__fipo}{$$irc_event{channel}}}) {
-        my $nick = $$state{__fipo}{$$irc_event{channel}}{$day};
+    foreach my $day (sort keys %{$$state{fipo}{$$irc_event{channel}}}) {
+        my $nick = $$state{fipo}{$$irc_event{channel}}{$day};
         $$nick_stats{$nick}++;
 
         if ($nick eq $oldnick) {
@@ -65,14 +65,14 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
 
 } elsif ($msg =~ /^fiporeset\s*$/) {
     return reply("no permission!") if not perms("owner");
-    $$state{__fipo}{$$irc_event{channel}} = {};
+    $$state{fipo}{$$irc_event{channel}} = {};
     return say("Fipo stats for $$irc_event{channel} were reset.");
 
 
 } elsif ($msg =~ /^fiposet\s*([^\s]+)\s(.*)$/) {
     return reply("no permission!") if not perms("owner");
     my $date = $1; my $nick = $2;
-    $$state{__fipo}{$$irc_event{channel}}{$date} = $nick;
+    $$state{fipo}{$$irc_event{channel}}{$date} = $nick;
     save_configuration();
     return say("fipo for $date set to $nick!");
 
@@ -81,11 +81,11 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
     my $day = sprintf("%4d%02d%02d", $lt[5]+1900, $lt[4]+1, $lt[3]);
 
     my $fipo_nick = "";
-    $fipo_nick = $$state{__fipo}{$$irc_event{channel}}{$day}
-        if exists $$state{__fipo}{$$irc_event{channel}}{$day};
+    $fipo_nick = $$state{fipo}{$$irc_event{channel}}{$day}
+        if exists $$state{fipo}{$$irc_event{channel}}{$day};
 
     if ($fipo_nick eq "") {
-        $$state{__fipo}{$$irc_event{channel}}{$day} = $$irc_event{nick};
+        $$state{fipo}{$$irc_event{channel}}{$day} = $$irc_event{nick};
         save_configuration();
         return say("w00t! :D");
     } else {

@@ -242,7 +242,7 @@ sub dispatch_irc_event {
         # arguments. The 'cmd' is matched against module defined CMDS later.
         if (($$code_args{msg} =~ $$state{bot_triggerre}) and ($$code_args{msg} =~ $$state{bot_commandre})) {
             $$code_args{cmd} = $1;
-            $$code_args{args} = $2 || "";
+            $$code_args{args} = (defined $2?$2:"");
             $$code_args{args} =~ s/^\s+//g; $$code_args{args} =~ s/\s+$//g;
         }
 
@@ -258,7 +258,7 @@ sub dispatch_irc_event {
         # arguments. The 'cmd' is matched against module defined CMDS later.
         if (($$code_args{msg} =~ $$state{bot_triggerre}) and ($$code_args{msg} =~ $$state{bot_commandre})) {
             $$code_args{cmd} = $1;
-            $$code_args{args} = $2 || "";
+            $$code_args{args} = (defined $2?$2:"");
             $$code_args{args} =~ s/^\s+//g; $$code_args{args} =~ s/\s+$//g;
         }
 
@@ -493,8 +493,8 @@ sub load_configuration {
 sub save_configuration {
     my $temp = {};
     foreach my $key (keys %$state) {
-        # XXX not nice. use prefix?
-        next if $key =~ m#^(?:act_channel|user_info|dbh|bot_is_op|modules)$#;
+        # should rewrite all non-persistent keys to __-prefix
+        next if $key =~ m#^(?:__|act_channel|user_info|dbh|bot_is_op|modules)$#;
         $$temp{$key} = $$state{$key};
         msg("$key = " . $$state{$key});
     }
