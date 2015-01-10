@@ -20,7 +20,6 @@ if ($msg =~ m"^!@(?:\s(\-f))?") {
     my $force = $1;
 
     my $last_url = $$state{__urls}{$channel}{url} || undef;
-    my $last_info = $$state{__urls}{$channel}{info} || undef;
     my $last_update = $$state{__urls}{$channel}{updated} || undef;
     if (not defined $last_url or $last_url eq "") {
         return say("I have not seen any URLs on $channel yet.");
@@ -30,9 +29,12 @@ if ($msg =~ m"^!@(?:\s(\-f))?") {
     $last_update = 0 if $force eq "-f";
     my $ttl = 300 - (time() - $last_update);
     if ($ttl <= 0) {
-        $$state{__urls}{$channel}{info} = fetchURLinfo($last_url);
+        if ($last_url =~ m#youtube.com/watch\S*v=|youtu.be/([\w-]+)#) {
+            $$state{__urls}{$channel}{info} = fetchYTinfo($1);
+        } else { 
+            ($$state{__urls}{$channel}{info}, undef) = fetchURLinfo($last_url);
+        }
         $$state{__urls}{$channel}{updated} = time();
-        $postfix = '';
     } else {
         $postfix = "(cached,ttl:${ttl}s)";
     }
@@ -73,27 +75,59 @@ sub fetchURLinfo {
 
     }
 
-    if ($$ret{content_type} =~ m"text/html") {
-        my $req = HTTP::Request->new(GET => $url);
-        my $res = $lwp->request($req);
-        if (!$res->is_success) {
-            msg("GET failed on '$url'");
-            msg("--- " . $res->status_line);
-            $$ret{title} = 'GET failed: ' . $res->status_line;
-        } else {
-            my $html = $res->content;
-            if ($html =~ m#<title[^>]*>(.+?)<\/title#ims) {
-                $$ret{title} = $1; $$ret{title} =~ s#\r?\n# #g;
-                $$ret{title} =~ s#^\s+##g; $$ret{title} =~ s#\s+$##g;
-            } else {
-                $$ret{title} = 'no match';
-            }
-        }
+    my $content = "";
+    my $req = HTTP::Request->new(GET => $url);
+    my $res = $lwp->request($req);
+    if (!$res->is_success) {
+        msg("GET failed on '$url'");
+        msg("--- " . $res->status_line);
+        $$ret{title} = 'GET failed: ' . $res->status_line;
     } else {
-        $$ret{title} = "content-type: " . $$ret{content_type};
+        $content = $res->content;
+        if ($content =~ m#<title[^>]*>(.+?)<\/title#ims) {
+            $$ret{title} = $1; $$ret{title} =~ s#\r?\n# #g;
+            $$ret{title} =~ s#^\s+##g; $$ret{title} =~ s#\s+$##g;
+        } else {
+            $$ret{title} = 'no match, content-type: ' . $$ret{content_type};
+        }
     }
 
     $$ret{title} = decode_entities($$ret{title});
+    return ($ret, $content);
+}
 
+
+sub fetchYTinfo {
+    my ($vid_id) = @_;
+
+    my $url = "https://gdata.youtube.com/feeds/api/videos/$vid_id?v=2&alt=json";
+    my (undef, $content) = fetchURLinfo($url);
+
+    my $yt_info = from_json($content);
+    $yt_info = $$yt_info{entry};
+
+    my $ret = {};
+    $$ret{title} = "Youtube fetch failed. :(";
+    #return $ret if not ref $yt_info;
+
+    my $title = $$yt_info{title}{'$t'};
+    
+    my $duration = text_duration($$yt_info{'media$group'}{'yt$duration'}{'seconds'});
+    
+    my $likes = $$yt_info{'yt$rating'}{'numLikes'};
+    my $dislikes = $$yt_info{'yt$rating'}{'numDislikes'};
+
+    my $commentcount = $$yt_info{'gd$comments'}{'gd$feedLink'}{'countHint'};
+    my $viewcount = $$yt_info{'yt$statistics'}{'viewCount'};
+
+    my $rate_avg = sprintf("%0.2f", $$yt_info{'gd$rating'}{'average'});
+    my $rate_max = $$yt_info{'gd$rating'}{'max'};
+
+    $$yt_info{'published'}{'$t'} =~ m#(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.#;
+    my ($Y, $M, $D, $h, $m, $s) = ($1, $2, $3, $4, $5, $6);
+    my $uploaded = "$D-$M-$Y";
+    my $uploader = $$yt_info{'media$group'}{'media$credit'}[0]->{'yt$display'};
+    
+    $$ret{title} = "$title ($duration, $uploaded)  Views: $viewcount  Rating: $rate_avg/$rate_max  Dis-/Likes: $dislikes/$likes  Comments: $commentcount  Uploader: $uploader";
     return $ret;
 }

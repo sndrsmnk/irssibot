@@ -584,6 +584,26 @@ sub botIsOp {
     return $i_am_op;
 }
 
+sub text_duration {
+    my ($seconds) = @_;
+    my $days = int($seconds / 86400);
+    $seconds -= ($days * 86400);
+    my $hours = int($seconds / 3600);
+    $seconds -= ($hours * 3600);
+    my $minutes = int($seconds / 60);
+    $seconds -= ($minutes * 60); 
+    if ($days > 0) {
+        return sprintf("%dd %dh %dm %ds", $days, $hours, $minutes, $seconds);
+    } elsif ($hours > 0) {
+        return sprintf("%dh %dm %ds", $hours, $minutes, $seconds);
+    } elsif ($minutes > 0) {
+        return sprintf("%dm %ds", $minutes, $seconds);
+    } elsif ($seconds > 0) {
+        return sprintf("%ds", $seconds);
+    } else {
+        return "err";
+    }   
+}
 
 
 ####
