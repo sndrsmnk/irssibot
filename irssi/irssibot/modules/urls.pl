@@ -29,7 +29,7 @@ if ($msg =~ m"^!@(?:\s(\-f))?") {
     $last_update = 0 if $force eq "-f";
     my $ttl = 300 - (time() - $last_update);
     if ($ttl <= 0) {
-        if ($last_url =~ m#youtube.com/watch\S*v=|youtu.be/([\w-]+)#) {
+        if ($last_url =~ m#(?:youtube.com/watch\S*v=|youtu.be/)([\w-]+)#) {
             $$state{__urls}{$channel}{info} = fetchYTinfo($1);
         } else { 
             ($$state{__urls}{$channel}{info}, undef) = fetchURLinfo($last_url);
