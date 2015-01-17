@@ -20,7 +20,7 @@ return if $msg =~ m#^quote\s*\d+\s*(?:\+\+|\-\-)#;
 
 
 if ($$irc_event{trigger} eq "module_command") {
-    if ($msg =~ /^(?:karma-why-|why-karma-|why-)(up|down)\s*(.*)/) {
+    if ($msg =~ /^(?:karma-why|why-karma|why)\-?(up|down)\s*(.*)/) {
         my $direction = $1;
         my $item = $2;
         $direction = "up" if $direction =~ m#^u#i;
@@ -50,7 +50,7 @@ if ($$irc_event{trigger} eq "module_command") {
         }
 
 
-    } elsif ($msg =~ /^(?:karma-who|who-karma-|who-)(up|down)\s*(.*)/) {
+    } elsif ($msg =~ /^(?:karma-who|who-karma|who)\-?(up|down)\s*(.*)/) {
         my $direction = $1;
         my $item = $2;
         $direction = "up" if $direction =~ m#^u#i;
@@ -73,7 +73,7 @@ if ($$irc_event{trigger} eq "module_command") {
             AND k.id = ?");
         $sth->execute($$karma_item{id}, $$karma_item{id});
         while (my $row = $sth->fetchrow_hashref()) {
-            $ret = defined $ret ? $ret . " .. $$row{item}($$row{karma})" : "$$row{item}($$row{karma})";
+            $ret = defined $ret ? $ret . " .. $$row{ircnick}($$row{amount})" : "$$row{ircnick}($$row{amount})";
         }
         reply($ret);
 
@@ -133,7 +133,7 @@ if ($$irc_event{trigger} eq "module_command") {
         return reply("karma ${direction}ness: " . $ret);
 
 
-    } elsif ($msg =~ /^karma\s*(.*)/) {
+    } elsif ($msg =~ /^karma\s+(.*)/) {
         my $item = $1;
         return if ((not defined $item) or ($item eq ""));
         my $karma_item = $$state{dbh}->selectrow_hashref("
