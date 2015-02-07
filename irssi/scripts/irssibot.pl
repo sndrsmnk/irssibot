@@ -40,7 +40,7 @@ our $state = {
     last_output     => 0,
     modules         => {},
 
-    udp_listen_ip   => 127.0.0.1,
+    udp_listen_ip   => '::ffff:127.0.0.1',
     udp_listen_port => 47774,
     udp_listen_pass => 'irssibot',
 };
