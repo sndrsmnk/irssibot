@@ -40,7 +40,8 @@ To configure the UDP-listener, you may need to set some configuration options af
 ```text
 !set udp_listen_ip ::ffff:127.0.0.1
 !set udp_listen_port 47774
-!set udp_listen_pass s00p3rzeeKRiT!```
+!set udp_listen_pass s00p3rzeeKRiT!
+```
 
 **NOTE**: The ```udp_listen_ip``` **must** be specified in IP6 notation. Prepend ```::ffff:``` to IPv4 addresses if used.
 
@@ -49,7 +50,9 @@ Use the ```!save``` command to make the configuration permanent.
 
 You can now send UDP-datagrams to the IP and port specified to have the bot output them on IRC:
 ```sh
-$ echo "s00p3rzeeKRiT! #testchan Test message via UDP" | nc -q1 -u 127.0.0.1 47774```
+$ echo "s00p3rzeeKRiT! #testchan Test message via UDP" | nc -q1 -u 127.0.0.1 47774
+```
 If the bot is on multiple networks with the same channelname, you can specify the irssi network name to help the bot decide where to output the message:
 ```sh
-$ echo "s00p3rzeeKRiT! ircnet #testchan Test message on ircnet via UDP" | nc -q1 -u 127.0.0.1 47774```
+$ echo "s00p3rzeeKRiT! ircnet #testchan Test message on ircnet via UDP" | nc -q1 -u 127.0.0.1 47774
+```
