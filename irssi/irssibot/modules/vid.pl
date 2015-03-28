@@ -63,7 +63,7 @@ if ($$irc_event{cmd} eq 'vid' and $$irc_event{args} =~ m#(?:\-a|[a-z]\d+)#i) {
     }
     $txt =~ s#,\s+$##;
     
-    say ("$vid_overzicht: $txt");
+    public("$vid_overzicht: $txt");
 }
 
 

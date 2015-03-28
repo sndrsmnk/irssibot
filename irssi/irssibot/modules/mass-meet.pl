@@ -18,7 +18,7 @@ foreach my $channel (Irssi::channels()) {
         my $tmp_user_info = $$state{dbh}->selectrow_hashref("SELECT u.* FROM ib_users u, ib_hostmasks h WHERE u.id = h.users_id AND h.hostmask = ?", undef, $nick->{host});
         if (exists $$tmp_user_info{ircnick}) {
             $$log_counters{recognised}++;
-            say ("Recognised as $$tmp_user_info{ircnick}: $nick->{nick}") if $verbose;
+            public("Recognised as $$tmp_user_info{ircnick}: $nick->{nick}") if $verbose;
             next;
         }
 
