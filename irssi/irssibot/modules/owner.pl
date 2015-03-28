@@ -34,4 +34,4 @@ load_configuration();
 initialize();
 save_configuration();
 
-say("My master, $bot_ownermask. Thanks. Things have been set-up and loaded.");
+public("My master, $bot_ownermask. Thanks. Things have been set-up and loaded.");

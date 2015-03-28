@@ -536,10 +536,10 @@ sub msg {
 ####
 #### Helper functions for modules
 
-sub reply { $$irc_event{server}->command("msg $$irc_event{target} $$irc_event{nick}, $_") for @_ }
-sub say   { $$irc_event{server}->command("msg $$irc_event{target} $_") for @_ }
-sub tell  { $$irc_event{server}->command("msg $$irc_event{nick} $_") for @_ }
-sub match { $$irc_event{server}->masks_match("@_", $$irc_event{nick}, $$irc_event{address}) }
+sub reply   { $$irc_event{server}->command("msg $$irc_event{target} $$irc_event{nick}, $_") for @_ }
+sub public  { $$irc_event{server}->command("msg $$irc_event{target} $_") for @_ }
+sub private { $$irc_event{server}->command("msg $$irc_event{nick} $_") for @_ }
+sub match   { $$irc_event{server}->masks_match("@_", $$irc_event{nick}, $$irc_event{address}) }
 
 
 sub perms {

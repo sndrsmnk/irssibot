@@ -26,7 +26,7 @@ my @vidInfo = parse_vidContent($vidContent);
 
 
 if ($$irc_event{cmd} eq 'vid' and $$irc_event{args} =~ m#(?:\-a|[a-z]\d+)#i) {
-    say("$vid_overzicht:") if ($$irc_event{args} eq '-a');
+    public("$vid_overzicht:") if ($$irc_event{args} eq '-a');
     my $said_something = 0;
     foreach my $elem (@vidInfo) {
         next if (lc($$elem{wegnr}) ne lc($$irc_event{args}) and lc($$irc_event{args}) ne "-a");
@@ -37,10 +37,10 @@ if ($$irc_event{cmd} eq 'vid' and $$irc_event{args} =~ m#(?:\-a|[a-z]\d+)#i) {
         }
         $txt .= ": " . $$elem{bericht};
 
-        say($txt);
+        public($txt);
         $said_something++;
     }
-    say("Geen meldingen.") if not $said_something;
+    public("Geen meldingen.") if not $said_something;
 
 
 } elsif ($$irc_event{cmd} eq 'vid' and $$irc_event{args} eq "") {

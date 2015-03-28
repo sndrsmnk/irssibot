@@ -25,7 +25,7 @@ if ($$irc_event{irc_event} eq "message_topic") {
 
 if ($$irc_event{cmd} =~ m#^(?:pt|previous-topic)$#i) {
     if ($$state{__topic}{$$irc_event{channel}}{previous_topic}) {
-        return say("The previous topic on $$irc_event{channel} was: '".$$state{__topic}{$$irc_event{channel}}{previous_topic}."'");
+        return public("The previous topic on $$irc_event{channel} was: '".$$state{__topic}{$$irc_event{channel}}{previous_topic}."'");
     }
     return reply("no changes were seen by me.");
 }

@@ -63,8 +63,8 @@ things, this hashref contains:
 
 A few routines are available from the main namespace:
     reply($msg) - output to IRC '$nick, $msg' to source of event
-    say($msg) - output to IRC '$msg'
-    tell($msg) - priv msg to $nick, '$msg' (this doesn't work XXX FIXME)
+    public($msg) - output to IRC '$msg'
+    private($msg) - priv msg to $nick, '$msg' (this doesn't work XXX FIXME)
     match($hostmask) - matches the current user ($$state{user_info})
          to the hostmask specified, returns 1 on match 0 on mismatch
     perms("owner", "admin") - matches the current user's permissions

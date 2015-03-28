@@ -26,7 +26,7 @@ foreach my $channel (Irssi::channels()) {
         if (exists $$tmp_user_info{ircnick}) {
             $$log_counters{merged}++;
             $$state{dbh}->do("INSERT INTO ib_hostmasks (users_id, hostmask) VALUES (?, ?)", undef, $$tmp_user_info{id}, $nick->{host});
-            say("Merged '".$nick->{address}."' to user $$tmp_user_info{ircnick}") if $verbose;
+            public("Merged '".$nick->{address}."' to user $$tmp_user_info{ircnick}") if $verbose;
             next;
         }
 
@@ -36,7 +36,7 @@ foreach my $channel (Irssi::channels()) {
         $$state{dbh}->do("INSERT INTO ib_perms (users_id, permission) VALUES (?, 'user')", undef, $tmp_user_info);
 
         $$log_counters{new}++;
-        say("Added to database '$nick->{nick}' at '$nick->{host}'.") if $verbose;
+        public("Added to database '$nick->{nick}' at '$nick->{host}'.") if $verbose;
     }
 
 }
@@ -45,5 +45,5 @@ my @log_txt = ();
 foreach (sort keys %$log_counters) {
     push @log_txt, "$$log_counters{$_} $_";
 }
-say("Done: " . join(", ", @log_txt));
+public("Done: " . join(", ", @log_txt));
 return;

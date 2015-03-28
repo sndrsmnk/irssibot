@@ -91,7 +91,7 @@ if ($$irc_event{trigger} eq "module_command") {
             undef,
             $item, $$irc_event{channel}
         );
-        return say("No such karma item, '$item'.") if not defined $$karma_item{item};
+        return public("No such karma item, '$item'.") if not defined $$karma_item{item};
 
         my $sth = $$state{dbh}->prepare(
             "SELECT kw.id AS ib_karma_who_id,
@@ -112,9 +112,9 @@ if ($$irc_event{trigger} eq "module_command") {
         }
 
         if (defined $ret) {
-            return say("$orig_direction of '$$karma_item{item}' are $ret");
+            return public("$orig_direction of '$$karma_item{item}' are $ret");
         } else {
-            return say("No " . lc($orig_direction) . " for '$$karma_item{item}' are known.");
+            return public("No " . lc($orig_direction) . " for '$$karma_item{item}' are known.");
         }
 
 

@@ -13,12 +13,12 @@ if ($$irc_event{cmd} eq 'set') {
     ($key, $value) = $$irc_event{args} =~ m#^(\S+)\s(.*)#;
     $$state{$key} = $value;
     save_configuration();
-    return say("State key '$key' set to value '$value'.");
+    return public("State key '$key' set to value '$value'.");
 
 } elsif ($$irc_event{cmd} eq 'unset') {
     delete $$state{$$irc_event{args}};
     save_configuration();
-    return say("State key '".$$irc_event{args}."' removed.");
+    return public("State key '".$$irc_event{args}."' removed.");
 }
 
 return reply("Uncaught set module event :(");

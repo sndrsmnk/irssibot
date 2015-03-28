@@ -46,10 +46,10 @@ $user_info = $$state{dbh}->selectrow_hashref("SELECT * FROM ib_users WHERE ircni
 if (exists $$user_info{ircnick} and not $recognized) {
     $out .= "but a registered user named $whois_nick was found. ";
 } elsif (not exists $$user_info{ircnick} and not $recognized) {
-    return say($out . "and no registered user named $whois_nick was found either.");
+    return public($out . "and no registered user named $whois_nick was found either.");
 }
 
-say($out);
+public($out);
 $out = "";
 return if not exists $$user_info{id};
 
@@ -67,7 +67,7 @@ while (my $row = $sth->fetchrow_hashref()) {
 }
 $sth->finish();
 
-say($out);
+public($out);
 $out = "";
 
 $out .= "Hostmasks: ";
@@ -79,4 +79,4 @@ while (my $row = $sth->fetchrow_hashref()) {
 $sth->finish();
 
 $out =~ s/, $//;
-say($out);
+public($out);

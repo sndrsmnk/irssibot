@@ -6,8 +6,8 @@ return reply("you lack permission.") if (not perms("admin"));
 save_configuration();
 
 my @stat = stat($$state{bot_configfile});
-say("Configuration is " . $stat[7] . " bytes, last modified " . localtime($stat[9]));
-say("Done.");
+public("Configuration is " . $stat[7] . " bytes, last modified " . localtime($stat[9]));
+public("Done.");
 
 my $temp = {};
 foreach my $key (keys %$state) {

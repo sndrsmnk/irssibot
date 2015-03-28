@@ -7,10 +7,10 @@ return reply("you lack permission.") if (not perms("admin"));
 my ($cmd, $args) = ($$irc_event{cmd}, $$irc_event{args});
 
 if ($args eq "") {
-    say("Usage is !$cmd <modulename>");
+    public("Usage is !$cmd <modulename>");
     return;
 } elsif ($args !~ $$state{bot_commandre}) {
-    say("Module name '$args' does not match '$$state{bot_commandre}'.");
+    public("Module name '$args' does not match '$$state{bot_commandre}'.");
     return;
 }
 
@@ -29,7 +29,7 @@ if ($cmd eq "reload" and $args eq "all") {
     }
 
 } elsif ($cmd eq "unload") {
-    say("Unloading module '$args'");
+    public("Unloading module '$args'");
     unload_module($args);
 
 } else {
@@ -37,6 +37,6 @@ if ($cmd eq "reload" and $args eq "all") {
     if (ref($code) ne "CODE") {
         reply("loading that module failed.");
     } else {
-        say("Module '$args' loaded.");
+        public("Module '$args' loaded.");
     }
 }

@@ -64,7 +64,7 @@ sub fetchURL {
     if (!$res->is_success) {
         msg("GET failed on '$url'");
         msg("---- " . $res->status_line);
-        say("wolfram: " . $res->status_line);
+        public("wolfram: " . $res->status_line);
         return undef;
     } else {
         return $res->content;

@@ -23,7 +23,7 @@ if ($msg =~ m"^!@(?:\s(\-f))?") {
     my $last_url = $$state{__urls}{$channel}{url} || undef;
     my $last_update = $$state{__urls}{$channel}{updated} || undef;
     if (not defined $last_url or $last_url eq "") {
-        return say("I have not seen any URLs on $channel yet.");
+        return public("I have not seen any URLs on $channel yet.");
     }
 
     my $postfix = '';
@@ -40,7 +40,7 @@ if ($msg =~ m"^!@(?:\s(\-f))?") {
         $postfix = "(cached,ttl:${ttl}s)";
     }
 
-    say('URL info: ' . $$state{__urls}{$channel}{info}{title} . ' ' . $postfix);
+    public('URL info: ' . $$state{__urls}{$channel}{info}{title} . ' ' . $postfix);
 }
 
 return;

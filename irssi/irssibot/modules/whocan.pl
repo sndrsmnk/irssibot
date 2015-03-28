@@ -27,4 +27,4 @@ return reply("no-one can do that on " . $$irc_event{channel})
 my $out = "The following nicks can '".$whocan_perm."' on " . $$irc_event{channel} . ": ";
 $out .= join ", ", @{$nicks};
     
-say($out);
+public($out);

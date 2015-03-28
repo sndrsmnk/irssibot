@@ -20,7 +20,7 @@ $channel = pop @perms if (isChannel($perms[$#perms]));
 
 my $user_info = $$state{dbh}->selectrow_hashref("SELECT * FROM ib_users WHERE ircnick = ?", undef, $nick);
 if (not exists $$user_info{ircnick}) {
-    say("User '$nick' does not exist.");
+    public("User '$nick' does not exist.");
     return;
 }
 
@@ -30,11 +30,11 @@ if ($mode eq "add") {
         $$state{dbh}->do("INSERT INTO ib_perms (users_id, permission, channel) VALUES (?, ?, ?)", undef, $$user_info{id}, $permission, $channel);
         $count++;
         if ($DBI::errstr ne "") {
-            say("Database failure while inserting permission '$permission'");
+            public("Database failure while inserting permission '$permission'");
             $count--;
         }
     }
-    say("Added $count permission(s) to $nick");
+    public("Added $count permission(s) to $nick");
 }
 
 
@@ -44,11 +44,11 @@ if ($mode eq "remove") {
         $$state{dbh}->do("DELETE FROM ib_perms WHERE users_id = ? AND permission = ? AND channel = ?", undef, $$user_info{id}, $permission, $channel);
         $count++;
         if ($DBI::errstr ne "") {
-            say("Database failure while removing permission '$permission'");
+            public("Database failure while removing permission '$permission'");
             $count--;
         }
     }
-    say("Removed $count permission(s) from $nick");
+    public("Removed $count permission(s) from $nick");
 }
 
 return;

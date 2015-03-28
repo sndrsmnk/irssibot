@@ -24,7 +24,7 @@ if ($msg =~ /^aq\s*(.+)/) {
     return reply("that quote is duplicate.") if ($DBI::errstr =~ m#duplicate#i);
 
     my $quote_id = $$state{dbh}->{mysql_insertid};
-    return say("Quote $quote_id added.");
+    return public("Quote $quote_id added.");
 
 
 } elsif ($msg =~ /^sq\s*(.+)/) {
@@ -34,20 +34,20 @@ if ($msg =~ /^aq\s*(.+)/) {
     $sth->execute($pattern, $$irc_event{channel});
 
     my $nrows = $sth->rows();
-    return say("No quote matched '$pattern'") if not $nrows;
+    return public("No quote matched '$pattern'") if not $nrows;
 
     my @quotes = ();
     while (my $row = $sth->fetchrow_hashref()) { push @quotes, $row; }
 
     if ($nrows > 3) {
         foreach my $id (int(rand($nrows)), int(rand($nrows)), int(rand($nrows))) {
-            say("#" . $quotes[$id]->{id} . " " . $quotes[$id]->{quote});
+            public("#" . $quotes[$id]->{id} . " " . $quotes[$id]->{quote});
         }
         return;
     }
 
     foreach my $q (@quotes) {
-        say("#" . $q->{id} . " " . $q->{quote});
+        public("#" . $q->{id} . " " . $q->{quote});
     }
     return;
 
@@ -64,7 +64,7 @@ if ($msg =~ /^aq\s*(.+)/) {
 
     if (defined $$quote_info{quote}) {
         $$state{dbh}->do("DELETE FROM ib_quotes WHERE id = ?", undef, $quote_id);
-        return say("Quote $quote_id deleted.");
+        return public("Quote $quote_id deleted.");
     } else {
         return reply("no quote with id $quote_id found.");
     }
@@ -79,7 +79,7 @@ if ($msg =~ /^aq\s*(.+)/) {
     );
 
     if (defined $$quote_info{quote}) {
-        return say("#$$quote_info{id} " . ($$quote_info{quote_score}?"[$$quote_info{quote_score}] ":"") . "$$quote_info{quote}");
+        return public("#$$quote_info{id} " . ($$quote_info{quote_score}?"[$$quote_info{quote_score}] ":"") . "$$quote_info{quote}");
     } else {
         return reply("no quote with id $quote_id found.");
     }
@@ -110,7 +110,7 @@ if ($msg =~ /^aq\s*(.+)/) {
             $_, $$irc_event{channel}
         );
 
-        say("#$_ " . ($$quote_info{quote_score}?"[$$quote_info{quote_score}] ":"") . "$$quote_info{quote}");
+        public("#$_ " . ($$quote_info{quote_score}?"[$$quote_info{quote_score}] ":"") . "$$quote_info{quote}");
     }
     return;
 
@@ -128,7 +128,7 @@ if ($msg =~ /^aq\s*(.+)/) {
 
     my $counter = 1;
     while (my $row = $sth->fetchrow_hashref()) {
-        say("#$$row{id} " . ($$row{quote_score}?"[$$row{quote_score}] ":"") . "$$row{quote}");
+        public("#$$row{id} " . ($$row{quote_score}?"[$$row{quote_score}] ":"") . "$$row{quote}");
         last if ++$counter > $count;
     }
 
@@ -161,7 +161,7 @@ if ($msg =~ /^aq\s*(.+)/) {
 
     $$quote_info{quote_score}++ if ($direction eq "++");
     $$quote_info{quote_score}-- if ($direction eq "--");
-    return say("Quote $quote_id quote score is now $$quote_info{quote_score}.");
+    return public("Quote $quote_id quote score is now $$quote_info{quote_score}.");
 
 
 } elsif ($msg =~ /^quote-(?:who|when)\s*(\d+)/) {

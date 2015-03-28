@@ -41,7 +41,7 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
         push @winningstreaknick, $streaknick unless grep { /^$streaknick$/ } @winningstreaknick;
     }
 
-    say("Longest streak of $winningstreak day(s) by " . join(", ", @winningstreaknick) . "!");
+    public("Longest streak of $winningstreak day(s) by " . join(", ", @winningstreaknick) . "!");
     
     my $count = 1;
     my $msg = undef;
@@ -60,13 +60,13 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
     }
     $count--; # meh.
 
-    return say("Top $count FIPO'ers: $msg");
+    return public("Top $count FIPO'ers: $msg");
     
 
 } elsif ($msg =~ /^fiporeset\s*$/) {
     return reply("no permission!") if not perms("owner");
     $$state{fipo}{$$irc_event{channel}} = {};
-    return say("Fipo stats for $$irc_event{channel} were reset.");
+    return public("Fipo stats for $$irc_event{channel} were reset.");
 
 
 } elsif ($msg =~ /^fiposet\s*([^\s]+)\s(.*)$/) {
@@ -74,7 +74,7 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
     my $date = $1; my $nick = $2;
     $$state{fipo}{$$irc_event{channel}}{$date} = $nick;
     save_configuration();
-    return say("fipo for $date set to $nick!");
+    return public("fipo for $date set to $nick!");
 
 } elsif ($msg =~ /^fipo(?:\s+.*)?/) {
     my @lt = localtime(time);
@@ -87,7 +87,7 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
     if ($fipo_nick eq "") {
         $$state{fipo}{$$irc_event{channel}}{$day} = $$irc_event{nick};
         save_configuration();
-        return say("w00t! :D");
+        return public("w00t! :D");
     } else {
         return reply("Yes! :D  It was YOU!  YOU SCORED TODAY'S FIPO!!  \\o/")
             if ($$irc_event{nick} eq $fipo_nick);

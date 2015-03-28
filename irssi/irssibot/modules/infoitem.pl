@@ -39,6 +39,6 @@ if ($msg =~ /^(.+?) = (.+?)$/) { # request to set a value
     if (not scalar(@values)) {
         reply("no definitions for that item.");
     } else {
-        say("$key is: " . join(" .. ", @values));
+        public("$key is: " . join(" .. ", @values));
     }
 }

@@ -11,4 +11,4 @@ msg("");
 msg("\$state:");
 msg(Dumper($state));
 
-say("Done.");
+public("Done.");

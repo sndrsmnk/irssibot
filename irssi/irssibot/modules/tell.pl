@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 # CMDS tell
 
-say("I love you.");
-# Does not work :( XXX FIXME
-tell("Do you love me?");
+public("Test1.");
+private("Test2.");
+
+$$irc_event{server}->command("msg $$irc_event{nick} Test3.");
