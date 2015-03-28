@@ -273,7 +273,7 @@ sub dispatch_irc_event {
 
 
     # Look for a module & command matching the event on irc
-MODULE: foreach my $module (sort keys %{$$state{modules}}) {
+    foreach my $module (sort keys %{$$state{modules}}) {
         foreach my $command (sort { length($a) <=> length($b) } keys %{$$state{modules}{$module}{command}}) {
             $$code_args{trigger} = '';
             if ($command eq $irc_event) {
@@ -304,7 +304,7 @@ MODULE: foreach my $module (sort keys %{$$state{modules}}) {
             my $t_start = [gettimeofday];
             my $code = load_module($module);
             eval {
-                $code->( $code_args );
+                $code->($code_args);
             };
             if ($@) {
                 msg("Module '${module}::${command}' exec gave output:");

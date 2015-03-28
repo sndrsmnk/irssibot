@@ -10,9 +10,10 @@ Quick install guide:
  * Create a new user '**irssibot**' (or joe, polly or finnigan...)
  * Checkout this repo in $HOME
 ```sh
+$ cd $HOME
 $ git clone https://github.com/sndrsmnk/irssibot.git
 $ mv -n .irssi OLD.irssi
-$ ln -sf $HOME/irssibot/irssi $HOME/.irssi
+$ ln -sf irssibot/irssi .irssi
 ```
  * Set up a proper **.my.cnf** file to connect to MySQL:
 ```mysql
