@@ -43,6 +43,7 @@ our $state = {
     udp_listen_ip   => '::ffff:127.0.0.1',
     udp_listen_port => 47774,
     udp_listen_pass => 'irssibot',
+    udp_debug       => 0,
 };
 
 
@@ -663,6 +664,9 @@ sub handleUDP {
     # Irssibot style '<password> <servertag> <channel> <...message...>'
     # Irssibot can be on the same channel on different networks.
     # Irssibot also allows sending messages to channels it has not joined. (mode -n)
+    #
+    # Use '!set udp_debug 1' to enable UDP-debug info.
+    #
     
     # At least three words are expected
     if ($udp_msg !~ m#^\S+\s+\S+\s+\S+#) {
@@ -711,8 +715,10 @@ sub handleUDP {
         }
         $server = $$channelObj{server};
     }
-
-    msg("UDP message from $srcHost:$srcPort to '$chan'");
-    msg("UDP message was: '$udp_msg'");
+    
+    if ($$state{udp_debug}) {
+        msg("UDP message from $srcHost:$srcPort to '$chan'");
+        msg("UDP message was: '$udp_msg'");
+    }
     $server->send_raw("PRIVMSG $chan :$udp_msg");
 }

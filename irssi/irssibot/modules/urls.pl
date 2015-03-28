@@ -3,6 +3,7 @@
 #
 use LWP::UserAgent;
 use HTML::Entities;
+use JSON;
 
 
 return if (not perms("user"));

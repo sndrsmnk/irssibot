@@ -2,13 +2,17 @@
 # CMDS message_topic
 # CMDS previous-topic pt
 #
-# CMDS topic-add topic-del opic-set
+# CMDS topic-add topic-del topic-set
 
 
 # On message_topic events, this fetches the current channel topic before the topic set event was processed.
 # Ergo, this holds the previous topic on topic set events.
 my $chanObj = findChannel($$irc_event{channel});
 my $chanObjTopic = $$chanObj{topic};
+
+
+return reply("channel mode has +t and i'm not op. Sorry.")
+    if (not botIsOp() and $$chanObj{mode} =~ m#t#);
 
 
 # Note that $server->command("TOPIC ...") calls from this module, will trigger this module too.
@@ -28,6 +32,7 @@ if ($$irc_event{cmd} =~ m#^(?:pt|previous-topic)$#i) {
 
 
 if ($$irc_event{cmd} =~ m#^topic-set#i) {
+    return reply("set what, exactly?") if (($$irc_event{args} eq "") or ($$irc_event{args} =~ m#^\s+$#));
     my $new_topic = $$irc_event{args};
     $$irc_event{server}->command("TOPIC $$irc_event{channel} $new_topic");
     return;
@@ -35,6 +40,7 @@ if ($$irc_event{cmd} =~ m#^topic-set#i) {
 
 
 if ($$irc_event{cmd} =~ m#^topic-add#i) {
+    return reply("add what, exactly?") if (($$irc_event{args} eq "") or ($$irc_event{args} =~ m#^\s+$#));
     my $new_topic = $chanObjTopic . " | " . $$irc_event{args};
     $$irc_event{server}->command("TOPIC $$irc_event{channel} $new_topic");
     return;
