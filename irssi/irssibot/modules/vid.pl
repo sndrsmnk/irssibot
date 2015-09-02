@@ -25,19 +25,25 @@ $vidContent =~ s#^.*(<div id="overzicht-verkeer".*</div>).+?<div id="overzicht-o
 my @vidInfo = parse_vidContent($vidContent);
 
 
-if ($$irc_event{cmd} eq 'vid' and $$irc_event{args} =~ m#(?:\-a|[a-z]\d+)#i) {
-    public("$vid_overzicht:") if ($$irc_event{args} eq '-a');
+if ($$irc_event{cmd} eq 'vid' and $$irc_event{args} ne "") {
     my $said_something = 0;
     foreach my $elem (@vidInfo) {
-        next if (lc($$elem{wegnr}) ne lc($$irc_event{args}) and lc($$irc_event{args}) ne "-a");
+        next if (lc($$elem{wegnr}) ne lc($$irc_event{args}));
 
-        my $txt = $$elem{wegnr} . ($$elem{hoofdtraject}ne""?" ".$$elem{hoofdtraject}:"") ." ". $$elem{traject};
+        my $txt =
+            ($$elem{wegnr}ne""?"$$elem{wegnr} ":"") .
+            ($$elem{hoofdtraject}ne""?"$$elem{hoofdtraject} ":"") .
+            $$elem{traject};
+
+        $txt =~ s/^\s+//; $txt =~ s/\s+$//;
+
         if (defined $$elem{lengte}) {
             $txt .= ", lengte " . $$elem{lengte} . " (" . $$elem{file_staat} . ")"
         }
+
         $txt .= ": " . $$elem{bericht};
 
-        public($txt);
+        public(ucfirst($txt));
         $said_something++;
     }
     public("Geen meldingen.") if not $said_something;
@@ -55,7 +61,7 @@ if ($$irc_event{cmd} eq 'vid' and $$irc_event{args} =~ m#(?:\-a|[a-z]\d+)#i) {
 
     my $txt = "";
     foreach my $wegnr (sort keys %$wegen) {
-        $txt .= "$wegnr (" . $$wegen{$wegnr}{aantal}; # . " " . ($$wegen{$wegnr}{aantal}>1?"meldingen":"melding");
+        $txt .= "$wegnr (" . $$wegen{$wegnr}{aantal};
         if (defined $$wegen{$wegnr}{lengte}) {
             $txt .= ", file ".$$wegen{$wegnr}{lengte}."km";
         }
@@ -84,7 +90,16 @@ sub parse_vidContent {
     while ($vidContent =~ m#<dl>(.+?)</dl>#gs) {
         my $fileContent = $1;
 
-        my $vid = {};
+        my $vid = {
+            'wegnr' => '',
+            'hoofdtraject' => '',
+            'traject' => '',
+            'soort' => '',
+            'file_staat' => '',
+            'lengte' => undef,
+            'bericht' => '',
+        };
+
         if ($fileContent =~ m#"vi-hoofdtraject.+?vi-wegnr">(.+?)</span>(.+?)</dt>#s) {
             $$vid{wegnr} = $1;
             $$vid{hoofdtraject} = $2;
@@ -95,13 +110,12 @@ sub parse_vidContent {
             $$vid{hoofdtraject} = '';
         }
 
-        if ($fileContent =~ m#"vi-traject.+?">(.+?)</dd>#s) {
-            $$vid{traject} = $1;
-            $$vid{traject} =~ s#<a href=.+?</a>##s; # strip camera url
-            $$vid{traject} =~ s#<.+?>##g; 
-
-        } else {
-            $$vid{traject} = '[parsefout]';
+        if ($fileContent =~ m#"vi-(gebied|traject).+?">(.+?)</d[dt]>#s) {
+            my ($type, $value) = ($1, $2);
+            $type = 'wegnr' if $type eq 'gebied';
+            $$vid{$type} = $value;
+            $$vid{$type} =~ s#<a href=.+?</a>##s; # strip camera url
+            $$vid{$type} =~ s#<.+?>##g; 
         }
 
         if ($fileContent =~ m#"vi-(bericht|langdurig).+?">(.*)</dd>#s) {
@@ -111,19 +125,15 @@ sub parse_vidContent {
             if ($berichtContent =~ s#.+?"vid-sprite vs-file-(\w+)">\s+</span>##s) {
                 my $state = $1;
                 $$vid{file_staat} = $state;
-                $$vid{file_staat} = 'geen' if ($state eq "leeg");
+                $$vid{file_staat} = 'onveranderd' if ($state eq "leeg");
                 $$vid{file_staat} = 'ongeval' if ($state eq "excl");
                 $$vid{file_staat} = 'afnemend' if ($state eq "down");
                 $$vid{file_staat} = 'toenemend' if ($state eq "up");
                 $$vid{file_staat} = 'gelijkblijvend' if ($state eq "same");
-            } else {
-                $$vid{file_staat} = '[parsefout]';
             }
 
             if ($berichtContent =~ s#.+?"vi-km.+?>(.+?)</span>##s) {
                 $$vid{lengte} = $1;
-            } else {
-                $$vid{lengte} = undef;
             }
 
             $berichtContent =~ s#<.+?>##g;
@@ -134,9 +144,6 @@ sub parse_vidContent {
             $berichtContent =~ s#omleiding ingesteld#, omleiding ingesteld.#;
             $berichtContent =~ s#vertraging de vertraging is ongeveer#vertraging: ca.#;
             $$vid{bericht} = $berichtContent;
-
-        } else {
-            $$vid{soort} = '[parsefout]';
         }
 
         push @ret_array, $vid;

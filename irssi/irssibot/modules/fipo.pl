@@ -9,8 +9,6 @@ my $msg = $$irc_event{msg};
 return if $msg !~ $$state{bot_triggerre};
 $msg =~ s#$$state{bot_triggerre}##;
 
-$$irc_event{channel} = "#cistron" if $$irc_event{channel} eq "#irssibot";
-
 if ($msg =~ /^fipostats(?:\s+.*)?/) {
     my $oldnick = my $streaknick = ""; my @winningstreaknick = ();
     my $streak = my $winningstreak = 1; my $nick_stats = {};
@@ -85,12 +83,12 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
         if exists $$state{fipo}{$$irc_event{channel}}{$day};
 
     if ($fipo_nick eq "") {
-        $$state{fipo}{$$irc_event{channel}}{$day} = $$irc_event{nick};
+        $$state{fipo}{$$irc_event{channel}}{$day} = $$state{user_info}{ircnick};
         save_configuration();
         return public("w00t! :D");
     } else {
         return reply("Yes! :D  It was YOU!  YOU SCORED TODAY'S FIPO!!  \\o/")
-            if ($$irc_event{nick} eq $fipo_nick);
+            if ($$state{user_info}{ircnick} eq $fipo_nick);
     }
 
 }

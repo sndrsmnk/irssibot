@@ -10,9 +10,11 @@ return if (not perms("user"));
 my $msg = $$irc_event{msg};
 my $channel = $$irc_event{channel};
 
-if ($msg =~ m/((?:https?\:\/\/)?[a-z0-9]+\.[a-z0-9\-\.]+(?:\/[^\s]+)*[^\s])/i) {
-    if ($$state{__urls}{$channel}{url} ne $1) {
-        $$state{__urls}{$channel}{url} = $1;
+if ($msg =~ m/((?:https?\:\/\/)?[a-z0-9]+\.(?:[a-z0-9\-]+\.)+(?:\/[^\s]+)*[^\s])/i) {
+    my $m = $1;
+    return if $m =~ m#\.{2,}#; #lazy fix for regexp catching "bla..." as url
+    if ($$state{__urls}{$channel}{url} ne $m) {
+        $$state{__urls}{$channel}{url} = $m;
         $$state{__urls}{$channel}{updated} = 0;
     }
 }
@@ -25,16 +27,16 @@ if ($msg =~ m"^!@(?:\s(\-f))?") {
     if (not defined $last_url or $last_url eq "") {
         return public("I have not seen any URLs on $channel yet.");
     }
-
+    
     my $postfix = '';
     $last_update = 0 if $force eq "-f";
     my $ttl = 300 - (time() - $last_update);
     if ($ttl <= 0) {
-        if ($last_url =~ m#(?:youtube.com/watch\S*v=|youtu.be/)([\w-]+)#) {
-            $$state{__urls}{$channel}{info} = fetchYTinfo($1);
-        } else { 
+        #if ($last_url =~ m#(?:youtube.com/watch\S*v=|youtu.be/)([\w-]+)#) {
+        #    $$state{__urls}{$channel}{info} = "it's a youtube video!"; #fetchYTinfo($1);
+        #} else { 
             ($$state{__urls}{$channel}{info}, undef) = fetchURLinfo($last_url);
-        }
+        #}
         $$state{__urls}{$channel}{updated} = time();
     } else {
         $postfix = "(cached,ttl:${ttl}s)";
@@ -61,6 +63,8 @@ sub fetchURLinfo {
     $lwp->max_redirect(7);
     $lwp->requests_redirectable(['GET', 'HEAD']);
     $lwp->timeout(15);
+    $lwp->max_size(32768);
+    $lwp->protocols_forbidden( ['file', 'mailto'] );
     $lwp->agent('Mozilla/5.0 (Windows NT 6.0; rv:28.0) Gecko/20100101 Firefox/28.0');
     my $req = HTTP::Request->new(HEAD => $url);
     my $res = $lwp->request($req);

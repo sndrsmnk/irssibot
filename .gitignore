@@ -2,4 +2,6 @@ irssi/log
 irssi/config
 irssi/default.theme
 irssi/irssibot/irssibot-config.pl
+irssi/irssibot/oui.txt
+irssi/irssibot/oui.txt.perlObj
 irssi/scripts/autorun

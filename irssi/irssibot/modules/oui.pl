@@ -1,8 +1,8 @@
 #!/usr/bin/perl -w
-# CMDS mac
+# CMDS mac oui
 #
-# wget -O ~/.irssi/irssibot/oui.txt \
-#     http://www.ieee.org/netstorage/standards/oui.txt
+# wget -O ~/.irssi/irssibot/oui.txt http://standards-oui.ieee.org/oui.txt
+# and type !mac rebuild
 #
 my ($cfgdir) = $$state{bot_configfile} =~ m#^(.*)/#;
 my $oui_txt = $cfgdir . "/oui.txt";
@@ -36,8 +36,9 @@ if (-e $oui_perl) {
 } elsif (-e $oui_txt) {
     if (open(FD, "<".$oui_txt)) {
         while (<FD>) {
-            if (/\s+([-A-F0-9]{8})\s+.hex.\s+(.*)\s*/) {
+            if (/^([-A-F0-9]{8})\s+.hex.\s+(.*)\s*/) {
                 my ($oui, $desc) = ($1, $2);
+                $desc =~ s/[\r\n]//g;
                 $oui = lc($oui);
                 $oui =~ tr/a-f0-9//cd;
                 $$oui_db{$oui} = $desc;
@@ -47,7 +48,6 @@ if (-e $oui_perl) {
         if (open(FD, ">".$oui_perl)) {
             print FD Dumper($oui_db);
             close(FD);
-            unlink($oui_txt);
 
         } else {
             reply("i couldn't write the OUI database to disk: $!");
