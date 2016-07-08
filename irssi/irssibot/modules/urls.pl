@@ -10,7 +10,7 @@ return if (not perms("user"));
 my $msg = $$irc_event{msg};
 my $channel = $$irc_event{channel};
 
-if ($msg =~ m/((?:https?\:\/\/)?[a-z0-9]+\.[a-z0-9\-\.]+(?:\/[^\s]+)*[^\s])/i) {
+if ($msg =~ m/((?:https?\:\/\/)?[a-z0-9\-]+\.[a-z0-9\-\.]+(?:\/[^\s]+)*[^\s])/i) {
     my $m = $1;
     return if $m =~ m#\.{2,}#; #lazy fix for regexp catching "bla..." as url
     if ($$state{__urls}{$channel}{url} ne $m) {

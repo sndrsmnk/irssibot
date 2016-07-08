@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 # CMDS message_public
-# CMDS karma
+# CMDS karma setkarma set-karma
 # CMDS who-karma-up who-up karma-who-up karma-whoup
 # CMDS who-karma-down who-down karma-who-down karma-whodown
 # CMDS wku why-karma-up why-up karma-why-up karma-whyup
@@ -49,6 +49,16 @@ if ($$irc_event{trigger} eq "module_command") {
             return reply("no reasons were given for karma $direction on '$item'");
         }
 
+    } elsif ($msg =~ /^(?:set\-?karma)\s+(.+?)\s+([-0-9]+)/) {
+        my $item = $1;
+        my $karma = $2;
+        return reply("nope.") if not perms('admin');
+
+        $$state{dbh}->do("INSERT INTO ib_karma (item, channel, karma) VALUES (?, ?, ?)
+                            ON DUPLICATE KEY UPDATE karma = ?",
+            undef, $item, $$irc_event{channel}, $karma, $karma);
+        return reply("ok.") unless $$state{dbh}->errstr();
+        return reply("fail: " . $$state{dbh}->errstr());
 
     } elsif ($msg =~ /^(?:karma-who|who-karma|who)\-?(up|down)\s*(.*)/) {
         my $direction = $1;

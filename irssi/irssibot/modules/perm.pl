@@ -24,7 +24,7 @@ if (not exists $$user_info{ircnick}) {
     return;
 }
 
-if ($mode eq "add") {
+if ($mode =~ m#(?:set|add)#) {
     my $count = 0;
     foreach my $permission (@perms) {
         $$state{dbh}->do("INSERT INTO ib_perms (users_id, permission, channel) VALUES (?, ?, ?)", undef, $$user_info{id}, $permission, $channel);
@@ -38,7 +38,7 @@ if ($mode eq "add") {
 }
 
 
-if ($mode eq "remove") {
+if ($mode =~ m#(?:rem(?:ove)?|del(?:ete)?)#) {
     my $count = 0;
     foreach my $permission (@perms) {
         $$state{dbh}->do("DELETE FROM ib_perms WHERE users_id = ? AND permission = ? AND channel = ?", undef, $$user_info{id}, $permission, $channel);
