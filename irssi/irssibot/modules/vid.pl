@@ -38,7 +38,7 @@ if ($$irc_event{cmd} eq 'vid' and $$irc_event{args} ne "") {
         $txt =~ s/^\s+//; $txt =~ s/\s+$//;
 
         if (defined $$elem{lengte}) {
-            $txt .= ", lengte " . $$elem{lengte} . " (" . $$elem{file_staat} . ")"
+            $txt .= ", lengte " . $$elem{lengte} . "km (" . $$elem{file_staat} . ")"
         }
 
         $txt .= ": " . $$elem{bericht};
@@ -87,7 +87,7 @@ sub parse_vidContent {
     my @ret_array = ();
 
     my $prev_wegnr = my $prev_hoofdtraject = "";
-    while ($vidContent =~ m#<dl>(.+?)</dl>#gs) {
+    while ($vidContent =~ m#<dl.+?>(.+?)</dl>#gs) {
         my $fileContent = $1;
 
         my $vid = {
@@ -132,7 +132,7 @@ sub parse_vidContent {
                 $$vid{file_staat} = 'gelijkblijvend' if ($state eq "same");
             }
 
-            if ($berichtContent =~ s#.+?"vi-km.+?>(.+?)</span>##s) {
+            if ($berichtContent =~ s#.+?"vi-km.+?(\d+).+?</span>##s) {
                 $$vid{lengte} = $1;
             }
 
