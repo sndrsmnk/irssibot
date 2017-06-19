@@ -17,54 +17,56 @@ foreach my $channel (Irssi::channels()) {
         if ($nick->{nick} =~ m#^$whois_nick$#i) {
             $whois_host = $nick->{host};
             last;
+
         }
+
     }
+
 }
 
 
 my $out = "$whois_nick is ";
-if ($whois_host eq "") {
-    $out .= "not on channel $$irc_event{target} ";
+if ($$irc_event{target} eq lc($whois_nick) or lc($$irc_event{nick}) eq lc($whois_nick)) { # PRIVMSG handling, lowercase user input
+    $whois_host = $$irc_event{address};
+    $out .= "who i'm talking to as $whois_host. ";
+
+
+} elsif ($whois_host eq "") {
+    $out .= "not a party of this conversation. ";
+
 } else {
-    $out .= "on channel $$irc_event{target} as $whois_host ";
-}
+    $out .= "on channel $$irc_event{target} as $whois_host. ";
 
-
-my $recognized = 0;
-my $user_info;
-if ($whois_host) {
-    $user_info = $$state{dbh}->selectrow_hashref("select u.* from ib_users u, ib_hostmasks h WHERE u.id = h.users_id AND h.hostmask = ?", undef, $whois_host);
-    if (exists $$user_info{ircnick}) {
-        $out .= "and is recognised as user $$user_info{ircnick}. ";
-        $recognized++;
-    } else {
-        $out .= "and is not recognised as a registered user ";
-    }
-}
-
-$user_info = $$state{dbh}->selectrow_hashref("SELECT * FROM ib_users WHERE ircnick = ?", undef, $whois_nick);
-if (exists $$user_info{ircnick} and not $recognized) {
-    $out .= "but a registered user named $whois_nick was found. ";
-} elsif (not exists $$user_info{ircnick} and not $recognized) {
-    return public($out . "and no registered user named $whois_nick was found either.");
 }
 
 public($out);
 $out = "";
-return if not exists $$user_info{id};
+
+my $by_nick_user_info = $$state{dbh}->selectrow_hashref("SELECT * FROM ib_users WHERE ircnick = ?", undef, $whois_nick);
+my $by_host_user_info = $$state{dbh}->selectrow_hashref("select u.* from ib_users u, ib_hostmasks h WHERE u.id = h.users_id AND h.hostmask = ?", undef, $whois_host);
+
+my $recognized = $by_nick_user_info || $by_host_user_info || {};
+
+return public("No registred user named $whois_nick was found, nor was this nick found as a participant of this conversation.")
+    if (not defined $$recognized{id});
+
 
 $out .= "Permissions: ";
-my $users_id = $$user_info{id};
+my $users_id = $$recognized{id};
 my $sth = $$state{dbh}->prepare("SELECT * FROM ib_perms WHERE users_id = ? AND (channel = ? OR channel = '') ORDER BY channel ASC");
 $sth->execute($users_id, $$irc_event{channel});
 while (my $row = $sth->fetchrow_hashref()) {
     $out .= $$row{permission};
     if ($$row{channel} ne "") {
         $out .= "($$row{channel}) ";
+
     } else {
         $out .= "(global) ";
+
     }
+
 }
+
 $sth->finish();
 
 public($out);
@@ -75,7 +77,9 @@ my $sth = $$state{dbh}->prepare("SELECT * FROM ib_hostmasks WHERE users_id = ? O
 $sth->execute($users_id);
 while (my $row = $sth->fetchrow_hashref()) {
     $out .= $$row{hostmask} . ", ";
+
 }
+
 $sth->finish();
 
 $out =~ s/, $//;
