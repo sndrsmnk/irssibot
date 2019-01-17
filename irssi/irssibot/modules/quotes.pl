@@ -27,7 +27,7 @@ if ($msg =~ /^aq\s*(.+)/) {
     return public("Quote $quote_id added.");
 
 
-} elsif ($msg =~ /^sq\s*(.+)/) {
+} elsif ($msg =~ /^sq\s+(.+)/) {
     my $pattern = $1;
 
     my $sth = $$state{dbh}->prepare("SELECT * FROM ib_quotes WHERE quote RLIKE ? AND channel = ?");
@@ -52,7 +52,7 @@ if ($msg =~ /^aq\s*(.+)/) {
     return;
 
 
-} elsif ($msg =~ /^dq\s*(\d+)/) {
+} elsif ($msg =~ /^dq\s+(\d+)/) {
     my $quote_id = $1;
     my $quote_info = $$state{dbh}->selectrow_hashref(
         "SELECT * FROM ib_quotes WHERE id = ? AND channel = ?",
@@ -70,7 +70,7 @@ if ($msg =~ /^aq\s*(.+)/) {
     }
 
 
-} elsif ($msg =~ /^iq\s*(\d+)/) {
+} elsif ($msg =~ /^iq\s+(\d+)/) {
     my $quote_id = $1;
     my $quote_info = $$state{dbh}->selectrow_hashref(
         "SELECT * FROM ib_quotes WHERE id = ? AND channel = ?",
@@ -85,7 +85,7 @@ if ($msg =~ /^aq\s*(.+)/) {
     }
 
 
-} elsif ($msg =~ /^(q|quote|rq|rq3|r3q)\s*$/) {
+} elsif ($msg =~ /^(q|quote|rq|rq3|r3q)$/) {
     my $count = 1; $count = 3 if $msg =~ /3/;
 
     my @quote_ids = @{$$state{dbh}->selectcol_arrayref(
@@ -115,7 +115,7 @@ if ($msg =~ /^aq\s*(.+)/) {
     return;
 
 
-} elsif ($msg =~ /^(?:lq|l3q)\s*$/) {
+} elsif ($msg =~ /^(?:lq|l3q|lq3)$/) {
     my $count = 1; $count = 3 if $msg =~ /3/;
 
     my $sth = $$state{dbh}->prepare(
@@ -164,7 +164,7 @@ if ($msg =~ /^aq\s*(.+)/) {
     return public("Quote $quote_id quote score is now $$quote_info{quote_score}.");
 
 
-} elsif ($msg =~ /^quote-(?:who|when)\s*(\d+)/) {
+} elsif ($msg =~ /^quote-(?:who|when)\s+(\d+)/) {
     my $quote_id = $1;
     my $quote_info = $$state{dbh}->selectrow_hashref(
         "SELECT * FROM ib_quotes WHERE id = ? AND channel = ?",
