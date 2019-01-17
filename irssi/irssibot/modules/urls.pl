@@ -3,8 +3,6 @@
 #
 use LWP::UserAgent;
 use HTML::Entities;
-use JSON;
-
 
 return if (not perms("user"));
 my $msg = $$irc_event{msg};
@@ -63,9 +61,9 @@ sub fetchURLinfo {
     $lwp->max_redirect(7);
     $lwp->requests_redirectable(['GET', 'HEAD']);
     $lwp->timeout(15);
-    $lwp->max_size(32768);
+    $lwp->max_size(65535);
     $lwp->protocols_forbidden( ['file', 'mailto'] );
-    $lwp->agent('Mozilla/5.0 (Windows NT 6.0; rv:28.0) Gecko/20100101 Firefox/28.0');
+    $lwp->agent('lwp-request/6.15 libwww-perl/6.15');
     my $req = HTTP::Request->new(HEAD => $url);
     my $res = $lwp->request($req);
     if (!$res->is_success) {
@@ -99,40 +97,4 @@ sub fetchURLinfo {
 
     $$ret{title} = decode_entities($$ret{title});
     return ($ret, $content);
-}
-
-
-sub fetchYTinfo {
-    my ($vid_id) = @_;
-
-    my $url = "https://gdata.youtube.com/feeds/api/videos/$vid_id?v=2&alt=json";
-    my (undef, $content) = fetchURLinfo($url);
-
-    my $yt_info = from_json($content);
-    $yt_info = $$yt_info{entry};
-
-    my $ret = {};
-    $$ret{title} = "Youtube fetch failed. :(";
-    #return $ret if not ref $yt_info;
-
-    my $title = $$yt_info{title}{'$t'};
-    
-    my $duration = text_duration($$yt_info{'media$group'}{'yt$duration'}{'seconds'});
-    
-    my $likes = $$yt_info{'yt$rating'}{'numLikes'};
-    my $dislikes = $$yt_info{'yt$rating'}{'numDislikes'};
-
-    my $commentcount = $$yt_info{'gd$comments'}{'gd$feedLink'}{'countHint'};
-    my $viewcount = $$yt_info{'yt$statistics'}{'viewCount'};
-
-    my $rate_avg = sprintf("%0.2f", $$yt_info{'gd$rating'}{'average'});
-    my $rate_max = $$yt_info{'gd$rating'}{'max'};
-
-    $$yt_info{'published'}{'$t'} =~ m#(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.#;
-    my ($Y, $M, $D, $h, $m, $s) = ($1, $2, $3, $4, $5, $6);
-    my $uploaded = "$D-$M-$Y";
-    my $uploader = $$yt_info{'media$group'}{'media$credit'}[0]->{'yt$display'};
-    
-    $$ret{title} = "$title ($duration, $uploaded)  Views: $viewcount  Rating: $rate_avg/$rate_max  Dis-/Likes: $dislikes/$likes  Comments: $commentcount  Uploader: $uploader";
-    return $ret;
 }
