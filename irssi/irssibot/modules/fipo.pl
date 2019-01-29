@@ -50,7 +50,7 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
         # prevent hilights
         my @letters = split(//, $nick);
         my $out_nick = shift @letters;
-        $out_nick .= "\0030\003";
+        $out_nick .= "\0030\003\002\002";
         $out_nick .= join("", @letters);
 
         $msg .= ($msg?", $out_nick($$nick_stats{$nick})":"$out_nick($$nick_stats{$nick})");
