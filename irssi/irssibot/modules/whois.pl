@@ -50,6 +50,7 @@ my $recognized = $by_nick_user_info || $by_host_user_info || {};
 return public("No registred user named $whois_nick was found, nor was this nick found as a participant of this conversation.")
     if (not defined $$recognized{id});
 
+public("Nick '$whois_nick' is recognized as registered user '" . $$recognized{ircnick} ."'");
 
 $out .= "Permissions: ";
 my $users_id = $$recognized{id};
