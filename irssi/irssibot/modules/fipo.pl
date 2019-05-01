@@ -9,11 +9,14 @@ my $msg = $$irc_event{msg};
 return if $msg !~ $$state{bot_triggerre};
 $msg =~ s#$$state{bot_triggerre}##;
 
-if ($msg =~ /^fipostats(?:\s+.*)?/) {
+if ($msg =~ /^fipostats\s?(.*)/) {
+    my $lookupnick = $1; $lookupnick =~ s/[\s\004\003\002\001]*//g;
+
     my $oldnick = my $streaknick = ""; my @winningstreaknick = ();
     my $streak = my $winningstreak = 1; my $nick_stats = {};
     foreach my $day (sort keys %{$$state{fipo}{$$irc_event{channel}}}) {
         my $nick = $$state{fipo}{$$irc_event{channel}}{$day};
+
         $$nick_stats{$nick}++;
 
         if ($nick eq $oldnick) {
@@ -39,7 +42,15 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
         push @winningstreaknick, $streaknick unless grep { /^$streaknick$/ } @winningstreaknick;
     }
 
-    public("Longest streak of $winningstreak day(s) by " . join(", ", @winningstreaknick) . "!");
+    if ($lookupnick) {
+        if ($$nick_stats{$lookupnick}) {
+            public(((${lookupnick}eq$$irc_event{nick})?"You":${lookupnick}) . " scored $$nick_stats{$lookupnick} fipo's with a longest streak of [E_NOTIMPL] day(s)!");
+        } else {
+            public("${lookupnick} did not score any fipo's!");
+        }
+    } else {
+        public("Longest streak of $winningstreak day(s) by " . join(", ", @winningstreaknick) . "!");
+    }
     
     my $count = 1;
     my $msg = undef;
@@ -58,7 +69,8 @@ if ($msg =~ /^fipostats(?:\s+.*)?/) {
     }
     $count--; # meh.
 
-    return public("Top $count FIPO'ers: $msg");
+    public("Top $count FIPO'ers: $msg") unless $lookupnick;
+    return
     
 
 } elsif ($msg =~ /^fiporeset\s*$/) {
