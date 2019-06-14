@@ -2,7 +2,7 @@
 # CMDS fipo
 # CMDS fipostats
 # CMDS fiporeset
-# CMDS fiposet
+# CMDS fiposet setfipo
 return if (not perms("user"));
 
 my $msg = $$irc_event{msg};
@@ -79,7 +79,7 @@ if ($msg =~ /^fipostats\s?(.*)/) {
     return public("Fipo stats for $$irc_event{channel} were reset.");
 
 
-} elsif ($msg =~ /^fiposet\s*([^\s]+)\s(.*)$/) {
+} elsif ($msg =~ /^(?:fiposet|setfipo)\s*([^\s]+)\s(.*)$/) {
     return reply("no permission!") if not perms("owner");
     my $date = $1; my $nick = $2;
     $$state{fipo}{$$irc_event{channel}}{$date} = $nick;
