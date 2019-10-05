@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
-# CMDS perm 
+# CMDS perm perms
 
-return reply("you lack permission.") if (not perms("admin", "perm"));
+return reply("you lack permission. Looking for !whoami?") if (not perms("admin", "perm"));
 
 my $cmd = $$irc_event{cmd};
 my $args = $$irc_event{args};
