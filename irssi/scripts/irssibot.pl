@@ -345,63 +345,59 @@ sub load_module {
     }
 
     my $mtime = (stat "$module_file")[9];
-    my $log_text = "";
-    if ($mtime > $$state{modules}{$module}{mtime}) {
-        if (exists $$state{modules}{$module}{mtime}) {
-            $log_text = "Updating module";
-        } else {
-            $log_text = "Loading new module";
-        }
-
-        # File was updated, so reload.
-        delete $$state{modules}{$module};
-
-        if (open my $fh, "$module_file") {
-            my @codestring = ( 'sub { local $irc_event = +shift; ' );
-            while (my $line = <$fh>) {
-                if ($line =~ m/# CMDS ([^#]+)$/) {
-                    my $module_cmds = $1;
-                    if ($module_cmds =~ $$state{bot_commandre}) {
-                        foreach my $command (split(/\s+/, $module_cmds)) {
-                            $$state{modules}{$module}{command}{$command}++;
-                        }
-                    }
-                    next;
-                }
-                next if $line =~ m/^\s*#/;
-                next if $line =~ m/^\s*$/;
-                push @codestring, $line;
-            }
-            push @codestring, '}'; # closes the 'sub {'
-            $$state{modules}{$module}{code} = clean_eval join "\n", @codestring;
-            if (ref($$state{modules}{$module}{code}) ne "CODE") {
-                msg("Errors while loading module '$module'. It was unloaded:");
-                msg($_) for $@;
-                delete $$state{modules}{$module};
-                return undef;
-            }
-
-            $$state{modules}{$module}{mtime} = $mtime;
-
-            if (not scalar keys(%{$$state{modules}{$module}{command}})) {
-                msg("Module '$module' does not declare any CMDS. It was unloaded.");
-                delete $$state{modules}{$module};
-                return undef;
-
-            } else {
-                my $commands_text = join ", ", keys %{$$state{modules}{$module}{command}};
-                msg("$log_text [$module]: $commands_text");
-
-            }
-
-        } else {
-            msg("Can't read '$module' in '$module_file': $!\n");
-
-        }
+    if ($mtime == $$state{modules}{$module}{mtime}) {
+        return $$state{modules}{$module}{code};
     }
 
-    # Code in $$state is fresh
-    return $$state{modules}{$module}{code};
+    my $log_text = "Loading new module";
+    if (exists $$state{modules}{$module}{mtime}) {
+        $log_text = "Updating module";
+    }
+
+    # File was updated, so reload.
+    delete $$state{modules}{$module};
+
+    my $fh = undef;
+    if (not open $fh, "<$module_file") {
+        return msg("Can't read '$module' in '$module_file': $!\n");
+    }
+
+    my @codestring = ( 'sub { local $irc_event = +shift; ' );
+    while (my $line = <$fh>) {
+        if ($line =~ m/# CMDS ([^#]+)$/) {
+            my $module_cmds = $1;
+            if ($module_cmds =~ $$state{bot_commandre}) {
+                foreach my $command (split(/\s+/, $module_cmds)) {
+                    $$state{modules}{$module}{command}{$command}++;
+                }
+            }
+            next;
+        }
+        next if $line =~ m/^\s*#/;
+        next if $line =~ m/^\s*$/;
+        push @codestring, $line;
+    }
+    push @codestring, '}'; # closes the 'sub {'
+    $$state{modules}{$module}{code} = clean_eval join "\n", @codestring;
+    if (ref($$state{modules}{$module}{code}) ne "CODE") {
+        msg("Errors while loading module '$module'. It was unloaded:");
+        msg($_) for $@;
+        delete $$state{modules}{$module};
+        return undef;
+    }
+
+    $$state{modules}{$module}{mtime} = $mtime;
+
+    if (not scalar keys(%{$$state{modules}{$module}{command}})) {
+        msg("Module '$module' does not declare any CMDS. It was unloaded.");
+        delete $$state{modules}{$module};
+        return undef;
+
+    } else {
+        my $commands_text = join ", ", keys %{$$state{modules}{$module}{command}};
+        msg("$log_text [$module]: $commands_text");
+
+    }
 }
 
 
