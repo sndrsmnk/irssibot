@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
-# CMDS mass-meet
+# CMDS mass-meet mass-merge
 
 my $cmd = $$irc_event{cmd};
 my $args = $$irc_event{args};
 
-return reply("you lack permission.") if (not perms("admin", "mass-meet"));
+return reply("you lack permission.") if (not perms("admin", $cmd));
 
 my $verbose = 0;
 $verbose++ if $$irc_event{args} =~ /^\-*?(?:v|verbose)$/;
@@ -22,6 +22,7 @@ foreach my $channel (Irssi::channels()) {
             next;
         }
 
+        # XXX FIXME Wat als pietje op freenode een andere pietje is dan die op ircnet. :O
         $tmp_user_info = $$state{dbh}->selectrow_hashref("SELECT * FROM ib_users WHERE ircnick = ?", undef, $nick->{nick});
         if (exists $$tmp_user_info{ircnick}) {
             $$log_counters{merged}++;
