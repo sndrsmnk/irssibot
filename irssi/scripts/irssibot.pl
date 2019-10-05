@@ -1,8 +1,7 @@
 #!/usr/bin/perl -w
 #
 # irssibot (c) GPLv2 2014 S. Smeenk <irssi@freshdot.net>
-#
-# Because existing IRC-bots suck
+# Because existing IRC-bots suck.
 # 
 use Irssi;
 use Irssi::Irc;
@@ -23,7 +22,7 @@ $VERSION = "20141127";
     name        => 'irssibot',
     description => 'IRC bot implementation based on irssi',
     license     => 'GNU GPLv2 or later',
-    url         => 'http://www.freshdot.net/',
+    url         => 'https://github.com/sndrsmnk/irssibot/',
 );
 
 
@@ -54,15 +53,13 @@ if (not -d $$state{bot_basepath}) {
 
 if (not -e $$state{bot_configfile}) {
     msg("Irssibot configuration file was not found.");
-    msg("");
-    msg("My Unique ID is currently " . $$state{bot_uniqueid});
-
 } else {
     load_configuration();
     msg("State was restored from $$state{bot_configfile}");
-    msg("");
-    msg("My Unique ID is currently " . $$state{bot_uniqueid});
 }
+
+msg("");
+msg("My Unique ID is currently " . $$state{bot_uniqueid});
 
 if (exists $$state{bot_ownermask} and $$state{bot_ownermask} ne "") {
     msg("My owner is " . $$state{bot_ownermask});
@@ -128,7 +125,7 @@ sub dispatch_irc_event {
 
     # The $code_args hashref is passed to the module handling this IRC
     # event. Make sure to copy all available parameters for each event
-    # as defined in IRSSI's signals.txt.gz documentation.
+    # as defined in irssi's signals.txt.gz documentation.
     my $code_args = {
         irc_event => $irc_event,
     };
@@ -292,8 +289,7 @@ sub dispatch_irc_event {
 
             # Ensures sane values for keys in the code_args ref for events.
             $$code_args{nick} = $server->{'nick'} if ($$code_args{nick} =~ /^[&#]/);
-            $$code_args{target} ||= $$code_args{nick};
-            $$code_args{target} = lc($$code_args{target});
+            $$code_args{target} = lc($$code_args{target} || $$code_args{nick});
             $$code_args{channel} = $$code_args{target} if not exists $$code_args{channel};
 
             # Bot nick and op-state
@@ -441,7 +437,7 @@ sub initialize {
         opendir(DIR, $$state{bot_modulepath});
         my @modules = grep { /\.pl$/ } readdir(DIR);
         closedir(DIR);
-        foreach my $module (@modules) { load_module($module); }
+        load_module($_) for @modules;
         msg("");
         msg("Modules loaded: " . join(', ', keys %{$$state{modules}}));
     } else {
@@ -494,7 +490,7 @@ sub load_configuration {
 sub save_configuration {
     my $temp = {};
     foreach my $key (keys %$state) {
-        # should rewrite all non-persistent keys to __-prefix
+        # XXX still should rewrite all non-persistent keys to __-prefix
         next if $key =~ m#^(?:__|act_channel|user_info|dbh|bot_is_op|modules)$#;
         $$temp{$key} = $$state{$key};
         msg("$key = " . $$state{$key});
@@ -573,16 +569,15 @@ sub isChannel {
 }
 
 sub botIsOp {
-    my $i_am_op = 0;
     foreach my $channel (Irssi::channels()) {
         next if ($$channel{name} ne $$irc_event{channel});
         foreach my $nick ($channel->nicks()) {
             if ($nick->{nick} eq $$irc_event{server}->{nick}) {
-                $i_am_op = 1 if ($$nick{op} == 1);
+                return 1 if ($$nick{op} == 1);
             }
         }
     }
-    return $i_am_op;
+    return 0;
 }
 
 sub text_duration {
@@ -653,7 +648,7 @@ sub openUDPSocket {
 
 
 sub handleUDP {	
-  	my $srcPaddr = recv($udp_sock, my $udp_msg, 1000, 0) or warn "$!\n";
+    my $srcPaddr = recv($udp_sock, my $udp_msg, 32768, 0) or warn "$!\n";
     my ($srcHost, $srcPort) = getnameinfo($srcPaddr, NI_NUMERICHOST | NI_NUMERICSERV);
     $udp_msg =~ s/\r?\n//g;
 
