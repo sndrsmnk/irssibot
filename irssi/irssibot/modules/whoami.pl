@@ -13,6 +13,10 @@ if (exists $$state{user_info}{ircnick}) {
     }
 } else {                                                                           
     $log_txt .= ", unrecognised user";
+    my $by_nick_user_info = $$state{dbh}->selectrow_hashref("SELECT * FROM ib_users WHERE ircnick = ?", undef, $$irc_event{nick});
+    if ($$by_nick_user_info{id}) {
+        $log_txt .= ", but a user was found in the DB, perhaps you need a merge?";
+    }
 }
 $log_txt .= " - and you are my owner!" if (match($$state{bot_ownermask}));
 return reply($log_txt);
