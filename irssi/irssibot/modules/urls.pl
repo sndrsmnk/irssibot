@@ -17,7 +17,7 @@ if ($msg =~ m/((?:https?\:\/\/)?[a-z0-9\-\_]+\.[a-z0-9\-\.\_]+(?:\/[^\s]+)*[^\s]
     }
 }
 
-if ($msg =~ m"^!@(?:\s(\-f))?") {
+if ($msg =~ m"^!@(?:\s(\-[vf]))?") {
     my $force = $1;
 
     my $last_url = $$state{__urls}{$channel}{url} || undef;
@@ -27,19 +27,16 @@ if ($msg =~ m"^!@(?:\s(\-f))?") {
     }
     
     my $postfix = '';
-    $last_update = 0 if $force eq "-f";
+    $last_update = 0 if $force;
     my $ttl = 300 - (time() - $last_update);
     if ($ttl <= 0) {
-        #if ($last_url =~ m#(?:youtube.com/watch\S*v=|youtu.be/)([\w-]+)#) {
-        #    $$state{__urls}{$channel}{info} = "it's a youtube video!"; #fetchYTinfo($1);
-        #} else { 
-            ($$state{__urls}{$channel}{info}, undef) = fetchURLinfo($last_url);
-        #}
+        ($$state{__urls}{$channel}{info}, undef) = fetchURLinfo($last_url);
         $$state{__urls}{$channel}{updated} = time();
     } else {
         $postfix = "(cached,ttl:${ttl}s)";
     }
 
+    $postfix .= " (url: $last_url)" if $force;
     public('URL info: ' . $$state{__urls}{$channel}{info}{title} . ' ' . $postfix);
 }
 
