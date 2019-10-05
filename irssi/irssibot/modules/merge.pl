@@ -22,11 +22,9 @@ my $ircnick_host = "";
 foreach my $channel (Irssi::channels()) {
     next if ($$channel{name} ne $$irc_event{target});
     foreach my $nick ($channel->nicks()) {
-        next if ($nick->{nick} eq $channel->{ownnick}->{nick});
-        if ($nick->{nick} =~ m#^$irc_nick$#i) {
-            $ircnick_host = $nick->{host};
-            last;
-        }
+        next if ($nick->{nick} ne $irc_nick);
+        $ircnick_host = $nick->{host};
+        last;
     }
 }
 
