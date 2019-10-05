@@ -17,11 +17,8 @@ foreach my $channel (Irssi::channels()) {
         if ($nick->{nick} =~ m#^$whois_nick$#i) {
             $whois_host = $nick->{host};
             last;
-
         }
-
     }
-
 }
 
 
@@ -47,14 +44,14 @@ my $by_host_user_info = $$state{dbh}->selectrow_hashref("select u.* from ib_user
 
 my $recognized = $by_nick_user_info || $by_host_user_info || {};
 
-return public("No registred user named $whois_nick was found, nor was this nick found as a participant of this conversation.")
+return public("$whois_nick is currently unknown to me. Either by name or by hostmask. Introduce us?")
     if (not defined $$recognized{id});
 
-public("Nick '$whois_nick' is recognized as registered user '" . $$recognized{ircnick} ."'");
+public("Nick '$whois_nick' is recognized as registered user '" . $$recognized{ircnick} . "', status " . ($$by_host_user_info{id}?"ok":($$by_nick_user_info{id}?"needs-merge":"needs-meet")) . ".");
 
 $out .= "Permissions: ";
 my $users_id = $$recognized{id};
-my $sth = $$state{dbh}->prepare("SELECT * FROM ib_perms WHERE users_id = ? AND (channel = ? OR channel = '') ORDER BY channel ASC");
+my $sth = $$state{dbh}->prepare("SELECT * FROM ib_perms WHERE users_id = ? AND (channel = ? OR channel = '' OR channel IS NULL) ORDER BY channel ASC");
 $sth->execute($users_id, $$irc_event{channel});
 while (my $row = $sth->fetchrow_hashref()) {
     $out .= $$row{permission};
