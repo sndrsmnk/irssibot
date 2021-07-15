@@ -1,7 +1,7 @@
 irssibot
 ====
 This is an IRC bot implementation built with irssi Perl scripting.<br/>
-(c) 2014, 2015, 2016, 2017, 2018, 2019 GPLv2+ - There may be dragons.
+(c) 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 GPLv2+ - There may be dragons.
 
 You may need some or all of these Ubuntu packages: irssi, mysql-server, libdbi-perl, libwww-perl, liburi-escape-perl, libhtml-html5-entities-perl, libxml-xpath-perl
 
