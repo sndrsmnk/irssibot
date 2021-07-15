@@ -1,3 +1,11 @@
+NOTE
+====
+
+This project is no longer actively updated.
+
+Development has moved to [the Python and Weechat based variant](https://github.com/sndrsmnk/weechatbot/ "WeeChatBot") of this bot project.
+
+
 irssibot
 ====
 This is an IRC bot implementation built with irssi Perl scripting.<br/>
